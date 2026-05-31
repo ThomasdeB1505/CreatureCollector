@@ -32,6 +32,12 @@ public class Tile : MonoBehaviour
         if (selectedTile != this)
         {
             ChangeColor(highlightColor);
+
+            if(currentCreatureOnTile != null)
+            {
+                //reference UI
+                
+            }
         }
     }
 
@@ -41,6 +47,7 @@ public class Tile : MonoBehaviour
         {
             ChangeColor(originalColor);
         }
+
     }
 
     void OnMouseDown()

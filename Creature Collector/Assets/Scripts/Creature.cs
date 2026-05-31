@@ -16,7 +16,7 @@ public class Creature : Unit
     public GameObject visualAlive, visualDead;
 
 
-    public void Initialize(Tile _startingTile)
+    public virtual void Initialize(Tile _startingTile)
     {
         currentTile = _startingTile;
         transform.position = currentTile.transform.position;
@@ -32,7 +32,7 @@ public class Creature : Unit
         _tile.currentCreatureOnTile = this;
     }
 
-    public void Attack(Creature _target)
+    public virtual void Attack(Creature _target)
     {
         if (_target.assignedPlayer == assignedPlayer)
             FriendlyAttack();
@@ -40,18 +40,18 @@ public class Creature : Unit
             _target.TakeDamage(attackDamage);
     }
 
-    public void FriendlyAttack()
+    public virtual void FriendlyAttack()
     {
         
     }
-    public void TakeDamage(int _damage)
+    public virtual void TakeDamage(int _damage)
     {
         health -= _damage;
         if (health <= 0)
             Die();
     }
 
-    public void Die()
+    public virtual void Die()
     {
         //swap to a death animation or visual or whatever
         dead = true;
