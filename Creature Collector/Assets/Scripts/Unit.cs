@@ -3,13 +3,12 @@ using UnityEngine;
 public class Unit : MonoBehaviour
 {
     public Vector2Int gridPosition;
+    public Tile currentTile;
     public float moveSpeed = 5f;
     private bool isMoving = false;
     private Vector3 targetPosition;
 
     private const float STOPPING_DISTANCE = 0.01f;
-
-    public int movementRange = 3;
 
     // Update is called once per frame
     void Update()
@@ -17,10 +16,12 @@ public class Unit : MonoBehaviour
         HandleMovement();
     }
 
-    public void Moveto(Vector3 position, Vector2Int gridPos)
+    public virtual void Moveto(Vector3 position, Tile _tile)
     {
+        currentTile.currentCreatureOnTile = null;
         targetPosition = position;
-        gridPosition = gridPos;
+        gridPosition = _tile.gridPosition;
+        currentTile = _tile;
         isMoving = true;
     }
 

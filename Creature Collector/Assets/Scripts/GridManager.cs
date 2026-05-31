@@ -13,13 +13,24 @@ public class GridManager : MonoBehaviour
     public Material lightMaterial;
     public Material darkMaterial;
 
-    private Tile[,] map;
+    public Tile[,] map;
 
+
+    //for now it's both an array with a size of 3, and due to time constraints, I'm hard coding it this way
+    public GameObject[] playerOneCreaturePrefabs;
+    public GameObject[] playerTwoCreaturePrefabs;
+
+
+    private void Awake()
+    {
+        BlackBoard.gridManager = this;
+    }
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         map = new Tile[width, height];
         GenerateGrid();
+        SpawnCreatures();
     }
 
     public void GenerateGrid()
@@ -43,6 +54,18 @@ public class GridManager : MonoBehaviour
                 map[x,y] = tileScript;
             }
         }
+    }
+
+    public void SpawnCreatures()
+    {
+        Instantiate(playerOneCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[0,0]);
+        Instantiate(playerOneCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[0,3]);
+        Instantiate(playerOneCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[0,6]);
+
+        Instantiate(playerTwoCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[6, 0]);
+        Instantiate(playerTwoCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[6, 3]);
+        Instantiate(playerTwoCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[6, 6]);
+
     }
 
     private List<Tile> GetTileNeighbors(Vector2Int tilePosition)

@@ -9,10 +9,13 @@ public class Tile : MonoBehaviour
     public Color originalColor;
     public Color highlightColor = Color.yellow;
     public Color selectedColor = Color.blue;
+    public Color AttackRangeColor = Color.red;
 
     private Renderer tileRenderer;
     public static Tile selectedTile;
     public bool inMoveRange = false;
+
+    public Creature currentCreatureOnTile;
 
     private void Start()
     {
@@ -50,6 +53,8 @@ public class Tile : MonoBehaviour
         selectedTile = this;
         ChangeColor(selectedColor);
 
-        FindAnyObjectByType<Unit>().Moveto(transform.position, gridPosition);
+        BlackBoard.gameManager.ClickOnTile(this);
+
+        //FindAnyObjectByType<Unit>().Moveto(transform.position, gridPosition);
     }
 }
