@@ -56,6 +56,11 @@ public class Tile : MonoBehaviour
         {
             selectedTile.ChangeColor(selectedTile.originalColor);
         }
+        if (currentCreatureOnTile != null)
+        {
+            currentCreatureOnTile.GetComponent<CreatureUI>()
+                .ShowStats();
+        }
 
         selectedTile = this;
         ChangeColor(selectedColor);
@@ -63,5 +68,7 @@ public class Tile : MonoBehaviour
         BlackBoard.gameManager.ClickOnTile(this);
 
         //FindAnyObjectByType<Unit>().Moveto(transform.position, gridPosition);
+
     }
+
 }

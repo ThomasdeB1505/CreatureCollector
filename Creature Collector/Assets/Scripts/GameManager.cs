@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -12,9 +13,17 @@ public class GameManager : MonoBehaviour
 
     Creature selectedCreature;
 
+    public TextMeshProUGUI turnText;
+
     private void Awake()
     {
         BlackBoard.gameManager = this;
+    }
+   
+    //doing this so turn UI is displayed correctly
+    private void Start()
+    {
+        StartTurn();
     }
 
     private void Update()
@@ -26,6 +35,8 @@ public class GameManager : MonoBehaviour
     {
         currentTurnActions = actionsPerTurn;
         selectedCreature = null;
+
+        UpdateTurnUI();
     }
 
     void EndTurn()
@@ -34,6 +45,10 @@ public class GameManager : MonoBehaviour
         if(currentPlayer >= amountOfPlayers )
             currentPlayer = 0;
         StartTurn();
+    }
+    void UpdateTurnUI()
+    {
+        turnText.text = "Player " + (currentPlayer + 1) + " Turn";
     }
 
     void SpendAction(int actionCost)

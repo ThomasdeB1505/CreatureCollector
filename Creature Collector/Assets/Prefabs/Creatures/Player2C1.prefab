@@ -9,8 +9,16 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: health
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: assignedPlayer
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -3556877388804771187, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: HoverObject
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 344623989635888775, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
