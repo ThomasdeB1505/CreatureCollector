@@ -13,7 +13,6 @@ public class CreaturePreviewManager : MonoBehaviour
     }
     public void ShowPreview(GameObject creaturePrefab)
     {
-        Debug.Log("Spawn called");
 
         if (currentPreview != null)
             Destroy(currentPreview);

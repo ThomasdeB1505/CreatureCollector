@@ -14,7 +14,8 @@ public class Tile : MonoBehaviour
     public Material SelectedMaterial;
     public Material AttackRangeMaterial;
     public Material originalMaterial;
-    
+    public Material CombinedRangeMaterial;
+
     private Renderer tileRenderer;
     public static Tile selectedTile;
     public bool inMoveRange = false;
@@ -34,18 +35,24 @@ public class Tile : MonoBehaviour
 
     void OnMouseEnter()
     {
+        BlackBoard.gameManager.RefreshHighlights();
+
         if (selectedTile != this)
-        {
             SetMaterial(HighlighMaterial);
+
+        if (currentCreatureOnTile != null)
+        {
+            BlackBoard.gridManager.HighlightMoveRange(this, currentCreatureOnTile.moveRange);
+            BlackBoard.gridManager.HighlightAttackRange(this, currentCreatureOnTile.moveRange, currentCreatureOnTile.attackRange);
         }
     }
 
     void OnMouseExit()
     {
+        BlackBoard.gameManager.RefreshHighlights(); // was ResetGridHighlights
+
         if (selectedTile != this)
-        {
             tileRenderer.material = originalMaterial;
-        }
     }
 
     void OnMouseDown()

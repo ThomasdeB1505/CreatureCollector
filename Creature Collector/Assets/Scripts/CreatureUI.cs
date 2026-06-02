@@ -24,10 +24,10 @@ public class CreatureUI : MonoBehaviour, IPointerClickHandler
         statsText.text =
             $"HP: {creature.health}\n\n" +
             $"Move Range: {creature.moveRange}\n" +
-            $"Move Cost: {creature.moveActionCost}\n\n" +
+            //  $"Move Cost: {creature.moveActionCost}\n\n" +
             $"Attack Range: {creature.attackRange}\n" +
-            $"Damage: {creature.attackDamage}\n" +
-            $"Attack Cost: {creature.attackActionCost}";
+            $"Damage: {creature.attackDamage}\n";
+          //  $"Attack Cost: {creature.attackActionCost}";
     }
 
     public void OnPointerClick(PointerEventData eventData)
