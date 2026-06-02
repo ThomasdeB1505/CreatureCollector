@@ -224,7 +224,7 @@ public class GameManager : MonoBehaviour
     void Deselect()
     {
         selectedCreature = null;
-        Tile.selectedTile.ChangeColor(Tile.selectedTile.originalColor);
+        Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
         Tile.selectedTile = null;
     }
 

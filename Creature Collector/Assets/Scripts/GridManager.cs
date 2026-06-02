@@ -103,7 +103,7 @@ public class GridManager : MonoBehaviour
             if (Tile.selectedTile != tile)
             {
                 tile.inMoveRange = false;
-                tile.ChangeColor(tile.originalColor);
+                tile.SetMaterial(tile.originalMaterial);
             }
         }
     }

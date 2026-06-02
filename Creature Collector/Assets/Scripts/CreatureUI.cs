@@ -7,6 +7,8 @@ public class CreatureUI : MonoBehaviour, IPointerClickHandler
     private Creature creature;
     public TextMeshProUGUI statsText;
 
+    public CreaturePreviewManager previewManager;
+
     private static CreatureUI currentlySelected;
 
     void Start()
@@ -47,6 +49,7 @@ public class CreatureUI : MonoBehaviour, IPointerClickHandler
         // Open this one
         statsText.gameObject.SetActive(true);
         currentlySelected = this;
+        previewManager.ShowPreview(creature.gameObject);
     }
 
     public void ShowStats()
@@ -59,5 +62,13 @@ public class CreatureUI : MonoBehaviour, IPointerClickHandler
 
         statsText.gameObject.SetActive(true);
         currentlySelected = this;
+    }
+    //Update health when taking damage
+    void Update()
+    {
+        if (statsText.gameObject.activeSelf)
+        {
+            UpdateText();
+        }
     }
 }
