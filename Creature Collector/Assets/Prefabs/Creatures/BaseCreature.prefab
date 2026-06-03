@@ -448,6 +448,7 @@ GameObject:
   - component: {fileID: 5815905027635557621}
   - component: {fileID: -8831931340654186097}
   - component: {fileID: -61527552479761194}
+  - component: {fileID: -3736801306872154681}
   - component: {fileID: -5430242357388880705}
   m_Layer: 3
   m_Name: BaseCreature
@@ -513,6 +514,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   statsText: {fileID: 2912091609687740401}
   previewManager: {fileID: 0}
+--- !u!114 &-3736801306872154681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3778768603781648243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2981e9dc3fb79cc47b80521db40a4e4c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  heartPrefab: {fileID: 3742078157029854599, guid: e7e82f5e5cd1d8a459f875d322c692c6, type: 3}
+  heightOffset: 1
+  fullHeart: {fileID: 21300000, guid: f37c73134f007244d83271daca3acf1f, type: 3}
+  emptyHeart: {fileID: -2413806693520163455, guid: f891d9a4b0861654aac7a690c0780ac6, type: 3}
+  heartSize: 0.3
 --- !u!65 &-5430242357388880705
 BoxCollider:
   m_ObjectHideFlags: 0

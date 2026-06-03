@@ -16,11 +16,22 @@ public class GameManager : MonoBehaviour
 
     public TextMeshProUGUI turnText;
 
+    public ActionPointsUI actionPointsUI;
+
+    public Material[] playerSkyboxes;
+    public GameObject victoryScreen;
+    public TextMeshProUGUI victoryText;
+
     private void Awake()
     {
         BlackBoard.gameManager = this;
     }
-   
+
+    public Creature GetSelectedCreature()
+    {
+        return selectedCreature;
+    }
+
     //doing this so turn UI is displayed correctly
     private void Start()
     {
@@ -36,14 +47,18 @@ public class GameManager : MonoBehaviour
     {
         currentTurnActions = actionsPerTurn;
         selectedCreature = null;
-
+        actionPointsUI.SetupCircles(actionsPerTurn); // ADD
+        actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn); // ADD
+        if (playerSkyboxes != null && playerSkyboxes.Length > currentPlayer)
+            RenderSettings.skybox = playerSkyboxes[currentPlayer];
         UpdateTurnUI();
+
     }
 
-    void EndTurn()
+    public void EndTurn()
     {
         currentPlayer++;
-        if(currentPlayer >= amountOfPlayers )
+        if (currentPlayer >= amountOfPlayers)
             currentPlayer = 0;
         StartTurn();
     }
@@ -55,8 +70,11 @@ public class GameManager : MonoBehaviour
     void SpendAction(int actionCost)
     {
         currentTurnActions -= actionCost;
-        if (currentTurnActions <= 0)
-            EndTurn();
+        actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn); // ADD
+    }
+    bool HasActionsLeft()
+    {
+        return currentTurnActions > 0;
     }
 
     public void ClickOnTile(Tile _clicked)
@@ -76,15 +94,16 @@ public class GameManager : MonoBehaviour
                     Deselect();
                     return;
                 }
-                // clicking a friendly creature selects it instead
+
                 if (_clicked.currentCreatureOnTile.assignedPlayer == currentPlayer)
                 {
                     selectedCreature = _clicked.currentCreatureOnTile;
-                    RefreshHighlights(); // replaces the two HighlightMoveRange/AttackRange calls
+                    RefreshHighlights();
                     return;
                 }
 
-                // Attack
+                if (!HasActionsLeft()) { Deselect(); return; } // ADD
+
                 List<Tile> attackRange = BlackBoard.gridManager.GetTilesInRange(
                     selectedCreature.currentTile, selectedCreature.attackRange);
 
@@ -100,7 +119,8 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // Move
+                if (!HasActionsLeft()) { Deselect(); return; } // ADD
+
                 List<Tile> moveRange = BlackBoard.gridManager.GetTilesInRange(
                     selectedCreature.currentTile, selectedCreature.moveRange);
 
@@ -110,7 +130,6 @@ public class GameManager : MonoBehaviour
                     return;
                 }
 
-                // TODO: obstacle checking along path
                 selectedCreature.Moveto(_clicked.transform.position, _clicked);
                 SpendAction(selectedCreature.moveActionCost);
                 Deselect();
@@ -123,7 +142,7 @@ public class GameManager : MonoBehaviour
                 && _clicked.currentCreatureOnTile.assignedPlayer == currentPlayer)
             {
                 selectedCreature = _clicked.currentCreatureOnTile;
-                RefreshHighlights(); // replaces the two HighlightMoveRange/AttackRange calls
+                RefreshHighlights();
                 return;
             }
             Deselect();
@@ -146,6 +165,39 @@ public class GameManager : MonoBehaviour
         Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
         Tile.selectedTile = null;
     }
+    public void CheckVictory()
+    {
+        Creature[] allCreatures = FindObjectsByType<Creature>(FindObjectsSortMode.None);
+        Debug.Log("CheckVictory called. Creatures found: " + allCreatures.Length);
 
+        for (int p = 0; p < amountOfPlayers; p++)
+        {
+            bool hasAny = false;
+            bool allDead = true;
+
+            foreach (Creature c in allCreatures)
+            {
+                if (!c.enabled) continue;
+
+                if (c.assignedPlayer == p)
+                {
+                    hasAny = true;
+                    if (c.health > 0)
+                    {
+                        allDead = false;
+                        break;
+                    }
+                }
+            }
+
+            if (hasAny && allDead)
+            {
+                int winner = (p == 0) ? 1 : 0;
+                victoryText.text = "Player " + (winner + 1) + " Wins!";
+                victoryScreen.SetActive(true);
+                return;
+            }
+        }
+    }
 
 }

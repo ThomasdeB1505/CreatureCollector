@@ -12,6 +12,7 @@ public class Creature : Unit
     public int attackActionCost;
     public int health;
     public bool dead;
+    private CreatureHealthUI healthUI;
 
     public GameObject visualAlive, visualDead;
 
@@ -24,6 +25,9 @@ public class Creature : Unit
         _startingTile.currentCreatureOnTile = this;
         visualAlive.SetActive(true);
         visualDead.SetActive(false);
+        healthUI = GetComponent<CreatureHealthUI>();
+        if (healthUI != null)
+            healthUI.Initialize(this, health);
     }
 
     public override void Moveto(Vector3 position, Tile _tile)
@@ -47,6 +51,8 @@ public class Creature : Unit
     public virtual void TakeDamage(int _damage)
     {
         health -= _damage;
+        if (healthUI != null)
+            healthUI.UpdateHearts(health); // ADD
         if (health <= 0)
             Die();
     }
@@ -57,5 +63,7 @@ public class Creature : Unit
         dead = true;
         visualAlive.SetActive(false);
         visualDead.SetActive(true);
+        BlackBoard.gameManager.CheckVictory();
     }
+
 }

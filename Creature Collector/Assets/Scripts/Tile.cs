@@ -42,8 +42,14 @@ public class Tile : MonoBehaviour
 
         if (currentCreatureOnTile != null)
         {
-            BlackBoard.gridManager.HighlightMoveRange(this, currentCreatureOnTile.moveRange);
-            BlackBoard.gridManager.HighlightAttackRange(this, currentCreatureOnTile.moveRange, currentCreatureOnTile.attackRange);
+            CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject); // ADD
+            currentCreatureOnTile.GetComponent<CreatureUI>().ShowStats();                  // ADD
+
+            if (BlackBoard.gameManager.GetSelectedCreature() == null)
+            {
+                BlackBoard.gridManager.HighlightMoveRange(this, currentCreatureOnTile.moveRange);
+                BlackBoard.gridManager.HighlightAttackRange(this, currentCreatureOnTile.moveRange, currentCreatureOnTile.attackRange);
+            }
         }
     }
 
@@ -63,10 +69,10 @@ public class Tile : MonoBehaviour
         }
         if (currentCreatureOnTile != null)
         {
-            currentCreatureOnTile.GetComponent<CreatureUI>()
-                .ShowStats();
+           // currentCreatureOnTile.GetComponent<CreatureUI>()
+           //     .ShowStats();
 
-            CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject);
+           // CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject);
         }
 
         selectedTile = this;
