@@ -194,10 +194,11 @@ public class GameManager : MonoBehaviour
             {
                 int winner = (p == 0) ? 1 : 0;
                 victoryText.text = "Player " + (winner + 1) + " Wins!";
+                CreaturePreviewManager.Instance.HidePreview();  // ADD
+                CreatureUI.HideCurrentStats();                  // ADD
                 victoryScreen.SetActive(true);
                 return;
             }
         }
+        }
     }
-
-}

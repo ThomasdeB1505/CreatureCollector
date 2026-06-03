@@ -32,4 +32,9 @@ public class CreaturePreviewManager : MonoBehaviour
         foreach (Transform child in obj.transform)
             SetLayerRecursive(child.gameObject, layer);
     }
+    public void HidePreview()
+    {
+        if (currentPreview != null)
+            Destroy(currentPreview);
+    }
 }

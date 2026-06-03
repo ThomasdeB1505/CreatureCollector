@@ -71,4 +71,12 @@ public class CreatureUI : MonoBehaviour, IPointerClickHandler
             UpdateText();
         }
     }
+    public static void HideCurrentStats()
+    {
+        if (currentlySelected != null)
+        {
+            currentlySelected.statsText.gameObject.SetActive(false);
+            currentlySelected = null;
+        }
+    }
 }
