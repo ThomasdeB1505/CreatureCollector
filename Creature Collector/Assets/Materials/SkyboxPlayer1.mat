@@ -140,15 +140,15 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DirectionPitch: 0
+    - _DirectionPitch: 0.054
     - _DirectionYaw: 0
     - _DstBlend: 0
     - _EnvironmentReflections: 1
-    - _Exponent: 1
+    - _Exponent: 1.52
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _Intensity: 0.3
+    - _Intensity: 0.68
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005

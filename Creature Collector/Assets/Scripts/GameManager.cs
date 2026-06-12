@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Rendering;
 
 public class GameManager : MonoBehaviour
@@ -21,6 +22,14 @@ public class GameManager : MonoBehaviour
     public Material[] playerSkyboxes;
     public GameObject victoryScreen;
     public TextMeshProUGUI victoryText;
+
+    public int deathPoints = 0;
+    public TextMeshProUGUI deathPointsText;  // UI text showing current death points
+    public Button evolveButton;              // button that triggers TryEvolveSelected
+    private bool battleStarted = false;
+    private bool isCapturing = false;
+    public void SetCapturing(bool value) => isCapturing = value;
+    public Material[] playerMaterials; // index 0 = blue (player 1), index 1 = red (player 2)
 
     private void Awake()
     {
@@ -43,6 +52,14 @@ public class GameManager : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
             Deselect();
     }
+    public void StartBattle()
+    {
+        battleStarted = true;
+        deathPoints = 0;
+        UpdateDeathPointsUI();
+        currentPlayer = 0;
+        StartTurn();
+    }
     void StartTurn()
     {
         currentTurnActions = actionsPerTurn;
@@ -61,6 +78,9 @@ public class GameManager : MonoBehaviour
         if (currentPlayer >= amountOfPlayers)
             currentPlayer = 0;
         StartTurn();
+
+        if (currentPlayer == 1) // Player 2 is AI
+            StartCoroutine(SimpleAI.Instance.TakeTurn(actionsPerTurn));
     }
     void UpdateTurnUI()
     {
@@ -79,6 +99,12 @@ public class GameManager : MonoBehaviour
 
     public void ClickOnTile(Tile _clicked)
     {
+        if (isCapturing) return; // block all tile input during capture
+        if (PlacementManager.Instance.IsPlacing)
+        {
+            PlacementManager.Instance.HandleTileClick(_clicked);
+            return;
+        }
         if (selectedCreature != null)
         {
             if (_clicked == selectedCreature.currentTile)
@@ -156,14 +182,80 @@ public class GameManager : MonoBehaviour
             BlackBoard.gridManager.HighlightMoveRange(selectedCreature.currentTile, selectedCreature.moveRange);
             BlackBoard.gridManager.HighlightAttackRange(selectedCreature.currentTile, selectedCreature.moveRange, selectedCreature.attackRange);
         }
+        UpdateDeathPointsUI(); // ADD
     }
 
     void Deselect()
     {
         selectedCreature = null;
-        BlackBoard.gridManager.ResetGridHighlights(); // ADD THIS
-        Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
-        Tile.selectedTile = null;
+        BlackBoard.gridManager.ResetGridHighlights();
+        if (Tile.selectedTile != null)
+        {
+            Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
+            Tile.selectedTile = null;
+        }
+        UpdateDeathPointsUI();
+    }
+    public void OnPlayerCreatureDied()
+    {
+        deathPoints++;
+        UpdateDeathPointsUI();
+    }
+
+    void UpdateDeathPointsUI()
+    {
+        if (deathPointsText != null)
+            deathPointsText.text = "Death Points: " + deathPoints;
+        // Also update evolve button interactability
+        if (evolveButton != null)
+            evolveButton.interactable = deathPoints > 0 && selectedCreature != null
+                && selectedCreature.evolvedFormPrefab != null
+                && !selectedCreature.isEvolved;
+    }
+
+    public void TryEvolveSelected()
+    {
+        if (selectedCreature == null) return;
+        if (selectedCreature.evolvedFormPrefab == null) return;
+        if (selectedCreature.isEvolved) return;
+        if (deathPoints <= 0) return;
+        if (!HasActionsLeft()) return;
+
+        Tile tile = selectedCreature.currentTile;
+        int player = selectedCreature.assignedPlayer;
+
+        GameObject oldObj = selectedCreature.gameObject;
+
+        Creature evolved = Instantiate(selectedCreature.evolvedFormPrefab)
+            .GetComponent<Creature>();
+
+        evolved.assignedPlayer = player;
+        evolved.isEvolved = true;
+
+        // IMPORTANT: break old tile reference BEFORE destroy
+        tile.currentCreatureOnTile = null;
+
+        Destroy(oldObj);
+
+        evolved.Initialize(tile);
+
+        selectedCreature = evolved;
+
+        deathPoints--;
+        SpendAction(1);
+        UpdateDeathPointsUI();
+        RefreshHighlights();
+        Debug.Log("Evolving: " + selectedCreature.name);
+    }
+    public void ClearSelectionState()
+    {
+        selectedCreature = null;
+        BlackBoard.gridManager.ResetGridHighlights();
+        if (Tile.selectedTile != null)
+        {
+            Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
+            Tile.selectedTile = null;
+        }
     }
     public void CheckVictory()
     {
@@ -193,10 +285,9 @@ public class GameManager : MonoBehaviour
             if (hasAny && allDead)
             {
                 int winner = (p == 0) ? 1 : 0;
-                victoryText.text = "Player " + (winner + 1) + " Wins!";
-                CreaturePreviewManager.Instance.HidePreview();  // ADD
-                CreatureUI.HideCurrentStats();                  // ADD
-                victoryScreen.SetActive(true);
+                CreaturePreviewManager.Instance.HidePreview();
+                CreatureUI.HideCurrentStats();
+                LevelManager.Instance.OnBattleVictory(winner);
                 return;
             }
         }

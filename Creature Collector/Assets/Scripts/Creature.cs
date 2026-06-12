@@ -13,8 +13,14 @@ public class Creature : Unit
     public int health;
     public bool dead;
     private CreatureHealthUI healthUI;
+    public GameObject evolvedFormPrefab; // assign in Inspector if this creature can evolve
+    public bool isEvolved = false;
+    public Material playerOneMaterial; // assign blue in inspector
+    public Material playerTwoMaterial; // assign red in inspector
 
     public GameObject visualAlive, visualDead;
+    public GameObject sourcePrefab;
+    public Sprite portrait;
 
 
     public virtual void Initialize(Tile _startingTile)
@@ -28,6 +34,19 @@ public class Creature : Unit
         healthUI = GetComponent<CreatureHealthUI>();
         if (healthUI != null)
             healthUI.Initialize(this, health);
+        // Apply correct material
+        Renderer r = visualAlive.GetComponent<Renderer>()
+                  ?? visualAlive.GetComponentInChildren<Renderer>();
+        if (BlackBoard.gameManager.playerMaterials != null
+            && BlackBoard.gameManager.playerMaterials.Length > assignedPlayer)
+        {
+            Material mat = BlackBoard.gameManager.playerMaterials[assignedPlayer];
+            foreach (Renderer rend in visualAlive.GetComponentsInChildren<Renderer>())
+                rend.material = mat;
+        }
+        Debug.Log("Spawned: " + gameObject.name + " at " + _startingTile.gridPosition);
+        // Face correct direction
+        transform.rotation = Quaternion.Euler(0, assignedPlayer == 0 ? 90 : -90, 0);
     }
 
     public override void Moveto(Vector3 position, Tile _tile)
@@ -59,10 +78,14 @@ public class Creature : Unit
 
     public virtual void Die()
     {
-        //swap to a death animation or visual or whatever
         dead = true;
         visualAlive.SetActive(false);
         visualDead.SetActive(true);
+
+        // Notify manager if this was a player 1 creature
+        if (assignedPlayer == 0)
+            BlackBoard.gameManager.OnPlayerCreatureDied();
+
         BlackBoard.gameManager.CheckVictory();
     }
 

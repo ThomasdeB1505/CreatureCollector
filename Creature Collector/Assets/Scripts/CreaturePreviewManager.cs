@@ -12,13 +12,24 @@ public class CreaturePreviewManager : MonoBehaviour
     {
         if (currentPreview != null)
             Destroy(currentPreview);
+
         currentPreview = Instantiate(creaturePrefab, spawnPoint.position, spawnPoint.rotation);
         currentPreview.transform.SetParent(spawnPoint);
         currentPreview.transform.localPosition = Vector3.zero;
         currentPreview.transform.localRotation = Quaternion.identity;
         currentPreview.transform.localScale = Vector3.one;
+
         foreach (var c in currentPreview.GetComponentsInChildren<Creature>())
             c.enabled = false;
+
+        // Hide health hearts on the preview
+        foreach (var h in currentPreview.GetComponentsInChildren<CreatureHealthUI>())
+        {
+            h.enabled = false;
+            foreach (var canvas in h.GetComponentsInChildren<Canvas>())
+                canvas.gameObject.SetActive(false);
+        }
+
         SetLayerRecursive(currentPreview, LayerMask.NameToLayer("Preview"));
     }
     void Update()

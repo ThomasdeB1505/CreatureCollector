@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc4017f9f67bc8c4eaa379e0a30cd95c, type: 3}
+  m_Name: Level2
+  m_EditorClassIdentifier: 
+  gridWidth: 5
+  gridHeight: 5
+  playerCreatureCount: 2
+  encounterOptions:
+  - encounterName: Easy
+    previewSprite: {fileID: 0}
+    enemyCreaturePrefabs:
+    - {fileID: 515647913151561499, guid: a77bbabb639d33b449e1ded2cfd5b12f, type: 3}
+    - {fileID: 515647913151561499, guid: eddffb28d76fbdb45948e0daabeac242, type: 3}
+  - encounterName: Hard
+    previewSprite: {fileID: 0}
+    enemyCreaturePrefabs:
+    - {fileID: 515647913151561499, guid: 89301300b3d91a24cbcd90ccef22f534, type: 3}
+    - {fileID: 515647913151561499, guid: 14a58d8353138cf4fa8bd0ca4e8dd791, type: 3}

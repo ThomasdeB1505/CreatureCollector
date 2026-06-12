@@ -14,6 +14,9 @@ public class GridManager : MonoBehaviour
     public Material darkMaterial;
     public Material moveRangeMaterial;
 
+    public Transform arenaTransform;      // assign your modelled arena object
+    public Vector3 arenaBaseScale = Vector3.one; // the arena's "natural" scale at 7x7
+
     public Tile[,] map;
 
     public float tileHeightOffset = 0.05f;
@@ -30,9 +33,7 @@ public class GridManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        map = new Tile[width, height];
-        GenerateGrid();
-        SpawnCreatures();
+
     }
 
     public void GenerateGrid()
@@ -161,5 +162,38 @@ public class GridManager : MonoBehaviour
             else
                 tile.SetMaterial(tile.AttackRangeMaterial);
         }
+    }
+    public void SetupGrid(int newWidth, int newHeight)
+    {
+        // Destroy old tiles
+        if (map != null)
+        {
+            foreach (Tile t in map)
+                if (t != null) Destroy(t.gameObject);
+        }
+
+        width = newWidth;
+        height = newHeight;
+        map = new Tile[width, height];
+        GenerateGrid();
+        ScaleArena();
+    }
+
+    void ScaleArena()
+    {
+        if (arenaTransform == null) return;
+
+        // Scale proportionally from the base scale (which fits a 7x7 grid)
+        float xRatio = (float)width / 7f;
+        float zRatio = (float)height / 7f;
+
+        arenaTransform.localScale = new Vector3(
+            arenaBaseScale.x * xRatio,
+            arenaBaseScale.y,
+            arenaBaseScale.z * zRatio
+        );
+
+        // Re-center
+        arenaTransform.position = new Vector3(0, arenaTransform.position.y, 0);
     }
 }

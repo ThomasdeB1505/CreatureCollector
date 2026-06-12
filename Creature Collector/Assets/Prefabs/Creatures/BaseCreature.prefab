@@ -498,6 +498,10 @@ MonoBehaviour:
   attackActionCost: 1
   health: 1
   dead: 0
+  evolvedFormPrefab: {fileID: 0}
+  isEvolved: 0
+  playerOneMaterial: {fileID: 2100000, guid: 32f23859a3fae5745962121208fa0928, type: 2}
+  playerTwoMaterial: {fileID: 2100000, guid: c48df5cbb391b1e4693df737d88d7da4, type: 2}
   visualAlive: {fileID: 3491281839574184319}
   visualDead: {fileID: 3247810263286311048}
 --- !u!114 &-61527552479761194

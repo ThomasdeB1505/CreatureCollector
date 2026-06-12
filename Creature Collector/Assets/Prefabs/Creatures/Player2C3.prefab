@@ -17,6 +17,10 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: attackRange
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: attackDamage
       value: 3
       objectReference: {fileID: 0}
@@ -34,6 +38,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4918108672831797196, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4918108672831797196, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: m_Materials.Array.size
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4918108672831797196, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
@@ -196,19 +204,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.70710784
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.70710576
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -216,7 +224,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -90
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 551924937026266339, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -226,6 +234,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Wolf Pup
       objectReference: {fileID: 0}
+    - target: {fileID: 551924937040229829, guid: c933bd5af2ce8284099a5fd0dff78810, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c48df5cbb391b1e4693df737d88d7da4, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 644179bf102355a4bb0190aaf671256a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - panel: {instanceID: 0}
+  - titleText: {instanceID: 0}
+  - buttonContainer: {instanceID: 0}
+  - captureButtonPrefab: {fileID: 6423833728784213186, guid: a5cacdca3a160934f8b5dff2ac79d69c, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

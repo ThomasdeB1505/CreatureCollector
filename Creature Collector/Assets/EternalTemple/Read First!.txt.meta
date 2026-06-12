@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b5426b2dad1a19543babe7f1b7827832
+timeCreated: 1540406889
+licenseType: Store
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 65780
+  packageName: Eternal Temple
+  packageVersion: 1.5.3
+  assetPath: Assets/EternalTemple/Read First!.txt
+  uploadId: 526794

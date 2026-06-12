@@ -36,11 +36,10 @@ public class Tile : MonoBehaviour
     void OnMouseEnter()
     {
         BlackBoard.gameManager.RefreshHighlights();
-
+        if (PlacementManager.Instance.IsPlacing)
+            PlacementManager.Instance.HighlightPlacementZone();
         if (selectedTile != this)
             SetMaterial(HighlighMaterial);
-
-        if (currentCreatureOnTile != null)
         {
             CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject); // ADD
             currentCreatureOnTile.GetComponent<CreatureUI>().ShowStats();                  // ADD
@@ -55,8 +54,9 @@ public class Tile : MonoBehaviour
 
     void OnMouseExit()
     {
-        BlackBoard.gameManager.RefreshHighlights(); // was ResetGridHighlights
-
+        BlackBoard.gameManager.RefreshHighlights();
+        if (PlacementManager.Instance.IsPlacing)
+            PlacementManager.Instance.HighlightPlacementZone();
         if (selectedTile != this)
             tileRenderer.material = originalMaterial;
     }
