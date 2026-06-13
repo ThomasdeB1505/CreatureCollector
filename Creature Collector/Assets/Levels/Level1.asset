@@ -17,10 +17,10 @@ MonoBehaviour:
   playerCreatureCount: 1
   encounterOptions:
   - encounterName: Nature
-    previewSprite: {fileID: 0}
+    previewSprite: {fileID: 21300000, guid: 3deaf34b454479a4e8a44e2c12334cb9, type: 3}
     enemyCreaturePrefabs:
-    - {fileID: 515647913151561499, guid: 576e68ebb82922b478dbfe345cd6684b, type: 3}
-  - encounterName: Mech
-    previewSprite: {fileID: 0}
+    - {fileID: 515647913151561499, guid: f81f3ab25ed908a4b9a7d5c99942d19d, type: 3}
+  - encounterName: Magic
+    previewSprite: {fileID: 21300000, guid: 6d0b78e17980bf748a2c13dd29ddbaf9, type: 3}
     enemyCreaturePrefabs:
     - {fileID: 515647913151561499, guid: a77bbabb639d33b449e1ded2cfd5b12f, type: 3}

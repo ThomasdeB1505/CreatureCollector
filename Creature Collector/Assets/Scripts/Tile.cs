@@ -18,6 +18,7 @@ public class Tile : MonoBehaviour
 
     private Renderer tileRenderer;
     public static Tile selectedTile;
+    public static Tile hoveredTile;
     public bool inMoveRange = false;
 
     public Creature currentCreatureOnTile;
@@ -35,6 +36,7 @@ public class Tile : MonoBehaviour
 
     void OnMouseEnter()
     {
+        hoveredTile = this;
         BlackBoard.gameManager.RefreshHighlights();
         if (PlacementManager.Instance.IsPlacing)
             PlacementManager.Instance.HighlightPlacementZone();
@@ -55,10 +57,19 @@ public class Tile : MonoBehaviour
     void OnMouseExit()
     {
         BlackBoard.gameManager.RefreshHighlights();
-        if (PlacementManager.Instance.IsPlacing)
-            PlacementManager.Instance.HighlightPlacementZone();
+
         if (selectedTile != this)
-            tileRenderer.material = originalMaterial;
+            tileRenderer.material = originalMaterial; // Runs first
+
+        if (PlacementManager.Instance.IsPlacing)
+            PlacementManager.Instance.HighlightPlacementZone(); // Now overwrites correctly
+
+        if (hoveredTile != null && hoveredTile.currentCreatureOnTile != null
+            && BlackBoard.gameManager.GetSelectedCreature() == null)
+        {
+            BlackBoard.gridManager.HighlightMoveRange(hoveredTile, hoveredTile.currentCreatureOnTile.moveRange);
+            BlackBoard.gridManager.HighlightAttackRange(hoveredTile, hoveredTile.currentCreatureOnTile.moveRange, hoveredTile.currentCreatureOnTile.attackRange);
+        }
     }
 
     void OnMouseDown()

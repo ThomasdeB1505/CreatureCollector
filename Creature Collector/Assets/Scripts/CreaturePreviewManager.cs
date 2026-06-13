@@ -1,13 +1,20 @@
 using UnityEngine;
+
 public class CreaturePreviewManager : MonoBehaviour
 {
     public static CreaturePreviewManager Instance;
     public Transform spawnPoint;
     public GameObject currentPreview;
+
+    [Header("UI Layering")]
+    [Tooltip("Canvas sorting order for creature stats — raise this above any other UI canvases in your scene.")]
+    public int statsSortingOrder = 100;
+
     void Awake()
     {
         Instance = this;
     }
+
     public void ShowPreview(GameObject creaturePrefab)
     {
         if (currentPreview != null)
@@ -30,19 +37,39 @@ public class CreaturePreviewManager : MonoBehaviour
                 canvas.gameObject.SetActive(false);
         }
 
+        // Force all remaining active canvases (i.e. the stats UI) to render on top
+        foreach (var canvas in currentPreview.GetComponentsInChildren<Canvas>())
+        {
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = statsSortingOrder;
+        }
+
         SetLayerRecursive(currentPreview, LayerMask.NameToLayer("Preview"));
     }
+
+    /// <summary>
+    /// Forces a Canvas to render above all other UI by enabling sorting override
+    /// and setting a high sorting order.
+    /// </summary>
+    void ApplyTopSortOrder(Canvas canvas)
+    {
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = statsSortingOrder;
+    }
+
     void Update()
     {
         if (currentPreview != null)
             currentPreview.transform.Rotate(0, 50f * Time.deltaTime, 0);
     }
+
     void SetLayerRecursive(GameObject obj, int layer)
     {
         obj.layer = layer;
         foreach (Transform child in obj.transform)
             SetLayerRecursive(child.gameObject, layer);
     }
+
     public void HidePreview()
     {
         if (currentPreview != null)

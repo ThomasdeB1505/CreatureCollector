@@ -19,6 +19,7 @@ public class PlacementManager : MonoBehaviour
     public bool IsPlacing => isPlacing;
     public UnityEngine.UI.Image creaturePreviewImage;
     public TextMeshProUGUI creatureNameText;
+    public Material placementZoneMaterial;
 
     void Awake() => Instance = this;
 
@@ -43,7 +44,7 @@ public class PlacementManager : MonoBehaviour
         {
             Tile t = BlackBoard.gridManager.map[0, y];
             if (t.currentCreatureOnTile == null)
-                t.SetMaterial(t.HighlighMaterial);
+                t.SetMaterial(placementZoneMaterial);
         }
     }
 

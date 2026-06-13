@@ -123,8 +123,19 @@ public class LevelManager : MonoBehaviour
             BlackBoard.gameManager.ClearSelectionState();
             BlackBoard.gameManager.SetCapturing(true);
 
-            var options = BuildCaptureOptions();
-            captureUI.Show(options, OnCaptureDone);
+            bool isLastLevel = currentLevelIndex >= levels.Length - 1;
+
+            if (isLastLevel)
+            {
+                BlackBoard.gameManager.SetCapturing(false);
+                if (allLevelsClearScreen != null)
+                    allLevelsClearScreen.SetActive(true);
+            }
+            else
+            {
+                var options = BuildCaptureOptions();
+                captureUI.Show(options, OnCaptureDone);
+            }
         }
         else
         {

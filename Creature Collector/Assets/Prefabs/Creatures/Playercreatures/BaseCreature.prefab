@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1975161625064226065}
   - component: {fileID: 7240362885410697965}
   - component: {fileID: 4003928976288511206}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: CreaturePreview
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -83,7 +83,7 @@ GameObject:
   - component: {fileID: 5668926173296894414}
   - component: {fileID: 3816395071888652263}
   - component: {fileID: 2912091609687740401}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -97,7 +97,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1827778706490280883}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -106,7 +106,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -597, y: 407}
+  m_AnchoredPosition: {x: -618.8, y: 383.4}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3816395071888652263
@@ -142,15 +142,9 @@ MonoBehaviour:
 
     Move Range: 3
 
-    Move Cost: 1
-
-
     Attack Range: 1
 
-    Damage:
-    1
-
-    Attack Cost: 1'
+    Damage: 1'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 31816f68237c0a243b56501bc1dd97bc, type: 2}
   m_sharedMaterial: {fileID: -7470159836062224765, guid: 31816f68237c0a243b56501bc1dd97bc, type: 2}
@@ -159,8 +153,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -358,7 +352,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.5, z: 0}
-  m_LocalScale: {x: 0.8, y: 1, z: 0.8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5815905027635557621}
@@ -504,6 +498,8 @@ MonoBehaviour:
   playerTwoMaterial: {fileID: 2100000, guid: c48df5cbb391b1e4693df737d88d7da4, type: 2}
   visualAlive: {fileID: 3491281839574184319}
   visualDead: {fileID: 3247810263286311048}
+  sourcePrefab: {fileID: 0}
+  portrait: {fileID: 0}
 --- !u!114 &-61527552479761194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -568,7 +564,7 @@ GameObject:
   - component: {fileID: 2886681399723817276}
   - component: {fileID: 9021851034723452747}
   - component: {fileID: 657215016320726933}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -618,7 +614,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 100
   m_TargetDisplay: 0
 --- !u!114 &9021851034723452747
 MonoBehaviour:
@@ -671,7 +667,7 @@ GameObject:
   - component: {fileID: 6553346990660700056}
   - component: {fileID: 1315065475491925887}
   - component: {fileID: 5834675559820094210}
-  m_Layer: 3
+  m_Layer: 7
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -734,8 +730,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
-  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

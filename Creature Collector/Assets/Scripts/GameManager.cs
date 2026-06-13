@@ -84,7 +84,7 @@ public class GameManager : MonoBehaviour
     }
     void UpdateTurnUI()
     {
-        turnText.text = "Player " + (currentPlayer + 1) + " Turn";
+        turnText.text = currentPlayer == 0 ? "Your Turn" : "Opponent's Turn";
     }
 
     void SpendAction(int actionCost)
@@ -205,7 +205,7 @@ public class GameManager : MonoBehaviour
     void UpdateDeathPointsUI()
     {
         if (deathPointsText != null)
-            deathPointsText.text = "Death Points: " + deathPoints;
+            deathPointsText.text = "Evolutions available: " + deathPoints;
         // Also update evolve button interactability
         if (evolveButton != null)
             evolveButton.interactable = deathPoints > 0 && selectedCreature != null
