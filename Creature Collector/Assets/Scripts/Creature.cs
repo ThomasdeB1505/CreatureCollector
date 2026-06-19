@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -13,7 +14,6 @@ public class Creature : Unit
     public int health;
     public bool dead;
     private CreatureHealthUI healthUI;
-    public GameObject evolvedFormPrefab; // assign in Inspector if this creature can evolve
     public bool isEvolved = false;
     public Material playerOneMaterial; // assign blue in inspector
     public Material playerTwoMaterial; // assign red in inspector
@@ -21,6 +21,17 @@ public class Creature : Unit
     public GameObject visualAlive, visualDead;
     public GameObject sourcePrefab;
     public Sprite portrait;
+
+    public GameObject evolvedFormPrefab; // assign in Inspector if this creature can evolve
+    public GameObject evolvedFormPrefabB;
+
+    public Sprite evolutionSpriteA;
+    public Sprite evolutionSpriteB;
+
+    public string evolutionLabelA;
+    public string evolutionLabelB;
+
+    public List<CreatureMove> moves; // assign in Inspector
 
 
     public virtual void Initialize(Tile _startingTile)
@@ -76,6 +87,11 @@ public class Creature : Unit
             Die();
     }
 
+    public void UseMove(int index, Creature target)
+    {
+        if (index < moves.Count)
+            moves[index].Execute(this, target);
+    }
     public virtual void Die()
     {
         dead = true;

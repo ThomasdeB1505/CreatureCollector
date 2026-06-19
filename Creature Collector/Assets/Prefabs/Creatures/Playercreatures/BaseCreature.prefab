@@ -492,7 +492,6 @@ MonoBehaviour:
   attackActionCost: 1
   health: 1
   dead: 0
-  evolvedFormPrefab: {fileID: 0}
   isEvolved: 0
   playerOneMaterial: {fileID: 2100000, guid: 32f23859a3fae5745962121208fa0928, type: 2}
   playerTwoMaterial: {fileID: 2100000, guid: c48df5cbb391b1e4693df737d88d7da4, type: 2}
@@ -500,6 +499,13 @@ MonoBehaviour:
   visualDead: {fileID: 3247810263286311048}
   sourcePrefab: {fileID: 0}
   portrait: {fileID: 0}
+  evolvedFormPrefab: {fileID: 0}
+  evolvedFormPrefabB: {fileID: 0}
+  evolutionSpriteA: {fileID: 0}
+  evolutionSpriteB: {fileID: 0}
+  evolutionLabelA: 
+  evolutionLabelB: 
+  moves: []
 --- !u!114 &-61527552479761194
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -570,7 +576,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8298883303013193701
 RectTransform:
   m_ObjectHideFlags: 0

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -24,12 +24,19 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI victoryText;
 
     public int deathPoints = 0;
-    public TextMeshProUGUI deathPointsText;  // UI text showing current death points
-    public Button evolveButton;              // button that triggers TryEvolveSelected
+    public TextMeshProUGUI deathPointsText;
+    public Button evolveButton;
     private bool battleStarted = false;
     private bool isCapturing = false;
     public void SetCapturing(bool value) => isCapturing = value;
-    public Material[] playerMaterials; // index 0 = blue (player 1), index 1 = red (player 2)
+    public Material[] playerMaterials;
+
+    // ── Evolution choice UI ─────────────────────────────────────────────────
+    [Header("Evolution Choice")]
+    [Tooltip("The EvolutionChoiceUI panel in the scene.")]
+    public EvolutionChoiceUI evolutionChoiceUI;
+
+
 
     private void Awake()
     {
@@ -41,7 +48,6 @@ public class GameManager : MonoBehaviour
         return selectedCreature;
     }
 
-    //doing this so turn UI is displayed correctly
     private void Start()
     {
         StartTurn();
@@ -52,6 +58,7 @@ public class GameManager : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
             Deselect();
     }
+
     public void StartBattle()
     {
         battleStarted = true;
@@ -60,16 +67,16 @@ public class GameManager : MonoBehaviour
         currentPlayer = 0;
         StartTurn();
     }
+
     void StartTurn()
     {
         currentTurnActions = actionsPerTurn;
         selectedCreature = null;
-        actionPointsUI.SetupCircles(actionsPerTurn); // ADD
-        actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn); // ADD
+        actionPointsUI.SetupCircles(actionsPerTurn);
+        actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn);
         if (playerSkyboxes != null && playerSkyboxes.Length > currentPlayer)
             RenderSettings.skybox = playerSkyboxes[currentPlayer];
         UpdateTurnUI();
-
     }
 
     public void EndTurn()
@@ -79,9 +86,10 @@ public class GameManager : MonoBehaviour
             currentPlayer = 0;
         StartTurn();
 
-        if (currentPlayer == 1) // Player 2 is AI
+        if (currentPlayer == 1)
             StartCoroutine(SimpleAI.Instance.TakeTurn(actionsPerTurn));
     }
+
     void UpdateTurnUI()
     {
         turnText.text = currentPlayer == 0 ? "Your Turn" : "Opponent's Turn";
@@ -90,8 +98,9 @@ public class GameManager : MonoBehaviour
     void SpendAction(int actionCost)
     {
         currentTurnActions -= actionCost;
-        actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn); // ADD
+        actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn);
     }
+
     bool HasActionsLeft()
     {
         return currentTurnActions > 0;
@@ -99,7 +108,7 @@ public class GameManager : MonoBehaviour
 
     public void ClickOnTile(Tile _clicked)
     {
-        if (isCapturing) return; // block all tile input during capture
+        if (isCapturing) return;
         if (PlacementManager.Instance.IsPlacing)
         {
             PlacementManager.Instance.HandleTileClick(_clicked);
@@ -128,7 +137,7 @@ public class GameManager : MonoBehaviour
                     return;
                 }
 
-                if (!HasActionsLeft()) { Deselect(); return; } // ADD
+                if (!HasActionsLeft()) { Deselect(); return; }
 
                 List<Tile> attackRange = BlackBoard.gridManager.GetTilesInRange(
                     selectedCreature.currentTile, selectedCreature.attackRange);
@@ -145,7 +154,7 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                if (!HasActionsLeft()) { Deselect(); return; } // ADD
+                if (!HasActionsLeft()) { Deselect(); return; }
 
                 List<Tile> moveRange = BlackBoard.gridManager.GetTilesInRange(
                     selectedCreature.currentTile, selectedCreature.moveRange);
@@ -174,6 +183,7 @@ public class GameManager : MonoBehaviour
             Deselect();
         }
     }
+
     public void RefreshHighlights()
     {
         BlackBoard.gridManager.ResetGridHighlights();
@@ -182,7 +192,7 @@ public class GameManager : MonoBehaviour
             BlackBoard.gridManager.HighlightMoveRange(selectedCreature.currentTile, selectedCreature.moveRange);
             BlackBoard.gridManager.HighlightAttackRange(selectedCreature.currentTile, selectedCreature.moveRange, selectedCreature.attackRange);
         }
-        UpdateDeathPointsUI(); // ADD
+        UpdateDeathPointsUI();
     }
 
     void Deselect()
@@ -196,6 +206,7 @@ public class GameManager : MonoBehaviour
         }
         UpdateDeathPointsUI();
     }
+
     public void OnPlayerCreatureDied()
     {
         deathPoints++;
@@ -206,47 +217,96 @@ public class GameManager : MonoBehaviour
     {
         if (deathPointsText != null)
             deathPointsText.text = "Evolutions available: " + deathPoints;
-        // Also update evolve button interactability
+
+        // Button is interactable when the selected creature has at least one
+        // evolution option available (either slot A or slot B is non-null).
         if (evolveButton != null)
-            evolveButton.interactable = deathPoints > 0 && selectedCreature != null
-                && selectedCreature.evolvedFormPrefab != null
-                && !selectedCreature.isEvolved;
+        {
+            bool canEvolve = deathPoints > 0
+                && selectedCreature != null
+                && !selectedCreature.isEvolved
+                && (selectedCreature.evolvedFormPrefab != null
+                    || selectedCreature.evolvedFormPrefabB != null);
+
+            evolveButton.interactable = canEvolve;
+        }
     }
 
+    // ── Evolution (two-choice flow) ──────────────────────────────────────────
+
+    /// <summary>
+    /// Called when the player presses the Evolve button.
+    /// Opens the choice panel if both options exist; skips straight to
+    /// ExecuteEvolution if only one option is configured.
+    /// </summary>
     public void TryEvolveSelected()
     {
         if (selectedCreature == null) return;
-        if (selectedCreature.evolvedFormPrefab == null) return;
         if (selectedCreature.isEvolved) return;
         if (deathPoints <= 0) return;
         if (!HasActionsLeft()) return;
+
+        bool hasA = selectedCreature.evolvedFormPrefab != null;
+        bool hasB = selectedCreature.evolvedFormPrefabB != null;
+
+        if (!hasA && !hasB) return;    // nothing to evolve into
+
+        // If only one option is configured, skip the choice panel entirely.
+        if (hasA && !hasB) { ExecuteEvolution(selectedCreature.evolvedFormPrefab); return; }
+        if (!hasA && hasB) { ExecuteEvolution(selectedCreature.evolvedFormPrefabB); return; }
+
+        // Both options available — show the choice UI.
+        if (evolutionChoiceUI == null)
+        {
+            Debug.LogWarning("GameManager: no EvolutionChoiceUI assigned — falling back to option A.");
+            ExecuteEvolution(selectedCreature.evolvedFormPrefab);
+            return;
+        }
+
+        evolutionChoiceUI.Show(
+            selectedCreature.evolvedFormPrefab,
+            selectedCreature.evolutionSpriteA,
+            selectedCreature.evolutionLabelA,
+
+            selectedCreature.evolvedFormPrefabB,
+            selectedCreature.evolutionSpriteB,
+            selectedCreature.evolutionLabelB
+        );
+    }
+
+    /// <summary>
+    /// Replaces selectedCreature with the chosen evolved prefab.
+    /// Called either directly (single option) or by EvolutionChoiceUI callback.
+    /// </summary>
+    public void ExecuteEvolution(GameObject chosenPrefab)
+    {
+        if (chosenPrefab == null) return;
+        if (selectedCreature == null) return;
 
         Tile tile = selectedCreature.currentTile;
         int player = selectedCreature.assignedPlayer;
 
         GameObject oldObj = selectedCreature.gameObject;
 
-        Creature evolved = Instantiate(selectedCreature.evolvedFormPrefab)
-            .GetComponent<Creature>();
-
+        Creature evolved = Instantiate(chosenPrefab).GetComponent<Creature>();
         evolved.assignedPlayer = player;
         evolved.isEvolved = true;
 
-        // IMPORTANT: break old tile reference BEFORE destroy
-        tile.currentCreatureOnTile = null;
-
+        tile.currentCreatureOnTile = null;   // break old reference before Destroy
         Destroy(oldObj);
 
         evolved.Initialize(tile);
-
         selectedCreature = evolved;
 
         deathPoints--;
         SpendAction(1);
         UpdateDeathPointsUI();
         RefreshHighlights();
-        Debug.Log("Evolving: " + selectedCreature.name);
+        Debug.Log("Evolved into: " + evolved.name);
     }
+
+    // ────────────────────────────────────────────────────────────────────────
+
     public void ClearSelectionState()
     {
         selectedCreature = null;
@@ -257,6 +317,7 @@ public class GameManager : MonoBehaviour
             Tile.selectedTile = null;
         }
     }
+
     public void CheckVictory()
     {
         Creature[] allCreatures = FindObjectsByType<Creature>(FindObjectsSortMode.None);
@@ -291,5 +352,5 @@ public class GameManager : MonoBehaviour
                 return;
             }
         }
-        }
     }
+}
