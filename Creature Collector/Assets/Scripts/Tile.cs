@@ -4,7 +4,7 @@ using UnityEngine.EventSystems;
 public class Tile : MonoBehaviour
 {
     public Vector2Int gridPosition;
-    //change selection colors
+
     [Header("Colors")]
     public Color originalColor;
     public Color highlightColor = Color.yellow;
@@ -15,13 +15,16 @@ public class Tile : MonoBehaviour
     public Material AttackRangeMaterial;
     public Material originalMaterial;
     public Material CombinedRangeMaterial;
-
     private Renderer tileRenderer;
     public static Tile selectedTile;
     public static Tile hoveredTile;
     public bool inMoveRange = false;
-
     public Creature currentCreatureOnTile;
+
+    // Generic blocking flag - used by Defensive Stance's second occupied tile
+    public bool blocked = false;
+    // Obstacle occupying this tile, if any
+    public Obstacle currentObstacle;
 
     private void Start()
     {
@@ -43,13 +46,12 @@ public class Tile : MonoBehaviour
         if (selectedTile != this)
             SetMaterial(HighlighMaterial);
         {
-            CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject); // ADD
-            currentCreatureOnTile.GetComponent<CreatureUI>().ShowStats();                  // ADD
-
+            CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject);
+            currentCreatureOnTile.GetComponent<CreatureUI>().ShowStats();
             if (BlackBoard.gameManager.GetSelectedCreature() == null)
             {
-                BlackBoard.gridManager.HighlightMoveRange(this, currentCreatureOnTile.moveRange);
-                BlackBoard.gridManager.HighlightAttackRange(this, currentCreatureOnTile.moveRange, currentCreatureOnTile.attackRange);
+                BlackBoard.gridManager.HighlightMoveRange(this, currentCreatureOnTile.moveMinRange, currentCreatureOnTile.moveRange);
+                BlackBoard.gridManager.HighlightAttackRange(this, currentCreatureOnTile.moveMinRange, currentCreatureOnTile.moveRange, currentCreatureOnTile.attackMinRange, currentCreatureOnTile.attackRange);
             }
         }
     }
@@ -57,42 +59,20 @@ public class Tile : MonoBehaviour
     void OnMouseExit()
     {
         BlackBoard.gameManager.RefreshHighlights();
-
         if (selectedTile != this)
-            tileRenderer.material = originalMaterial; // Runs first
-
+            tileRenderer.material = originalMaterial;
         if (PlacementManager.Instance.IsPlacing)
-            PlacementManager.Instance.HighlightPlacementZone(); // Now overwrites correctly
-
+            PlacementManager.Instance.HighlightPlacementZone();
         if (hoveredTile != null && hoveredTile.currentCreatureOnTile != null
             && BlackBoard.gameManager.GetSelectedCreature() == null)
         {
-            BlackBoard.gridManager.HighlightMoveRange(hoveredTile, hoveredTile.currentCreatureOnTile.moveRange);
-            BlackBoard.gridManager.HighlightAttackRange(hoveredTile, hoveredTile.currentCreatureOnTile.moveRange, hoveredTile.currentCreatureOnTile.attackRange);
+            BlackBoard.gridManager.HighlightMoveRange(hoveredTile, hoveredTile.currentCreatureOnTile.moveMinRange, hoveredTile.currentCreatureOnTile.moveRange);
+            BlackBoard.gridManager.HighlightAttackRange(hoveredTile, hoveredTile.currentCreatureOnTile.moveMinRange, hoveredTile.currentCreatureOnTile.moveRange, hoveredTile.currentCreatureOnTile.attackMinRange, hoveredTile.currentCreatureOnTile.attackRange);
         }
     }
 
     void OnMouseDown()
     {
-        if (selectedTile)
-        {
-            selectedTile.tileRenderer.material = selectedTile.originalMaterial;
-        }
-        if (currentCreatureOnTile != null)
-        {
-           // currentCreatureOnTile.GetComponent<CreatureUI>()
-           //     .ShowStats();
-
-           // CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject);
-        }
-
-        selectedTile = this;
-        SetMaterial(SelectedMaterial);
-
         BlackBoard.gameManager.ClickOnTile(this);
-
-        //FindAnyObjectByType<Unit>().Moveto(transform.position, gridPosition);
-
     }
-
 }

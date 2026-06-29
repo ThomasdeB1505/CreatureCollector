@@ -171,9 +171,17 @@ PrefabInstance:
       value: 3
       objectReference: {fileID: 0}
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: moves.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: evolvedFormPrefab
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: 'moves.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 7178a7ce86c40894f818362cef38d46e, type: 2}
     - target: {fileID: 267519582169981115, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: m_LocalScale.x
       value: 1

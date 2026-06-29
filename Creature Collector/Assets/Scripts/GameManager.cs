@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
 
+public enum ActionMode { None, Move, Attack, Special }
+
 public class GameManager : MonoBehaviour
 {
-    //handles the turns and input
     public int amountOfPlayers;
     int currentPlayer;
 
@@ -14,29 +16,25 @@ public class GameManager : MonoBehaviour
     int currentTurnActions;
 
     Creature selectedCreature;
+    private ActionMode currentMode = ActionMode.None;
+    private CreatureMove pendingMove;
 
     public TextMeshProUGUI turnText;
-
     public ActionPointsUI actionPointsUI;
-
     public Material[] playerSkyboxes;
     public GameObject victoryScreen;
     public TextMeshProUGUI victoryText;
-
     public int deathPoints = 0;
     public TextMeshProUGUI deathPointsText;
-    public Button evolveButton;
+    public Button evolveButton; // legacy standalone button - safe to leave unassigned if ActionUI replaces it
     private bool battleStarted = false;
     private bool isCapturing = false;
     public void SetCapturing(bool value) => isCapturing = value;
     public Material[] playerMaterials;
 
-    // ── Evolution choice UI ─────────────────────────────────────────────────
     [Header("Evolution Choice")]
     [Tooltip("The EvolutionChoiceUI panel in the scene.")]
     public EvolutionChoiceUI evolutionChoiceUI;
-
-
 
     private void Awake()
     {
@@ -72,10 +70,24 @@ public class GameManager : MonoBehaviour
     {
         currentTurnActions = actionsPerTurn;
         selectedCreature = null;
+        currentMode = ActionMode.None;
+        pendingMove = null;
         actionPointsUI.SetupCircles(actionsPerTurn);
         actionPointsUI.UpdateCircles(currentTurnActions, actionsPerTurn);
         if (playerSkyboxes != null && playerSkyboxes.Length > currentPlayer)
             RenderSettings.skybox = playerSkyboxes[currentPlayer];
+
+        // Defensive Stance lasts "until the player's next turn" - end it now that their turn has come around again
+        Creature[] allCreatures = FindObjectsByType<Creature>(FindObjectsSortMode.None);
+        foreach (Creature c in allCreatures)
+        {
+            if (c.assignedPlayer == currentPlayer && c.inDefensiveStance)
+                c.ExitDefensiveStance();
+        }
+
+        if (ActionUI.Instance != null)
+            ActionUI.Instance.Hide();
+
         UpdateTurnUI();
     }
 
@@ -106,6 +118,7 @@ public class GameManager : MonoBehaviour
         return currentTurnActions > 0;
     }
 
+    // ── Tile clicks ──────────────────────────────────────────────────────
     public void ClickOnTile(Tile _clicked)
     {
         if (isCapturing) return;
@@ -114,74 +127,180 @@ public class GameManager : MonoBehaviour
             PlacementManager.Instance.HandleTileClick(_clicked);
             return;
         }
-        if (selectedCreature != null)
+
+        if (selectedCreature == null)
         {
-            if (_clicked == selectedCreature.currentTile)
-            {
-                Deselect();
-                return;
-            }
+            TrySelect(_clicked);
+            return;
+        }
 
-            if (_clicked.currentCreatureOnTile != null)
-            {
-                if (_clicked.currentCreatureOnTile.dead)
-                {
-                    Deselect();
-                    return;
-                }
+        if (_clicked == selectedCreature.currentTile)
+        {
+            Deselect();
+            return;
+        }
 
-                if (_clicked.currentCreatureOnTile.assignedPlayer == currentPlayer)
-                {
-                    selectedCreature = _clicked.currentCreatureOnTile;
-                    RefreshHighlights();
-                    return;
-                }
+        if (currentMode == ActionMode.None
+            && _clicked.currentCreatureOnTile != null
+            && !_clicked.currentCreatureOnTile.dead
+            && _clicked.currentCreatureOnTile.assignedPlayer == currentPlayer)
+        {
+            SelectCreature(_clicked.currentCreatureOnTile);
+            return;
+        }
 
-                if (!HasActionsLeft()) { Deselect(); return; }
+        if (!HasActionsLeft()) { Deselect(); return; }
 
-                List<Tile> attackRange = BlackBoard.gridManager.GetTilesInRange(
-                    selectedCreature.currentTile, selectedCreature.attackRange);
+        switch (currentMode)
+        {
+            case ActionMode.Move:
+                HandleMoveClick(_clicked);
+                break;
+            case ActionMode.Attack:
+                HandleAttackClick(_clicked);
+                break;
+            case ActionMode.Special:
+                HandleSpecialClick(_clicked);
+                break;
+        }
+    }
 
-                if (!attackRange.Contains(_clicked))
-                {
-                    Deselect();
-                    return;
-                }
-
-                selectedCreature.Attack(_clicked.currentCreatureOnTile);
-                SpendAction(selectedCreature.attackActionCost);
-                Deselect();
-            }
-            else
-            {
-                if (!HasActionsLeft()) { Deselect(); return; }
-
-                List<Tile> moveRange = BlackBoard.gridManager.GetTilesInRange(
-                    selectedCreature.currentTile, selectedCreature.moveRange);
-
-                if (!moveRange.Contains(_clicked))
-                {
-                    Deselect();
-                    return;
-                }
-
-                selectedCreature.Moveto(_clicked.transform.position, _clicked);
-                SpendAction(selectedCreature.moveActionCost);
-                Deselect();
-            }
+    void TrySelect(Tile _clicked)
+    {
+        if (_clicked.currentCreatureOnTile != null
+            && !_clicked.currentCreatureOnTile.dead
+            && _clicked.currentCreatureOnTile.assignedPlayer == currentPlayer)
+        {
+            SelectCreature(_clicked.currentCreatureOnTile);
         }
         else
         {
-            if (_clicked.currentCreatureOnTile != null
-                && !_clicked.currentCreatureOnTile.dead
-                && _clicked.currentCreatureOnTile.assignedPlayer == currentPlayer)
-            {
-                selectedCreature = _clicked.currentCreatureOnTile;
-                RefreshHighlights();
-                return;
-            }
             Deselect();
         }
+    }
+
+    void SelectCreature(Creature c)
+    {
+        if (Tile.selectedTile != null)
+            Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
+
+        selectedCreature = c;
+        currentMode = ActionMode.None;
+        pendingMove = null;
+
+        Tile.selectedTile = c.currentTile;
+        Tile.selectedTile.SetMaterial(Tile.selectedTile.SelectedMaterial);
+
+        if (ActionUI.Instance != null)
+            ActionUI.Instance.Show(c);
+        RefreshHighlights();
+    }
+
+    void HandleMoveClick(Tile clicked)
+    {
+        List<Tile> validTiles = BlackBoard.gridManager.GetTilesInRange(
+            selectedCreature.currentTile, selectedCreature.moveMinRange, selectedCreature.moveRange);
+
+        if (validTiles.Contains(clicked) && clicked.currentCreatureOnTile == null && clicked.currentObstacle == null)
+            StartCoroutine(ExecuteMove(clicked));
+        else
+            CancelAction();
+    }
+
+    void HandleAttackClick(Tile clicked)
+    {
+        List<Tile> validTiles = BlackBoard.gridManager.GetTilesInRange(
+            selectedCreature.currentTile, selectedCreature.attackMinRange, selectedCreature.attackRange);
+
+        if (!validTiles.Contains(clicked)) { CancelAction(); return; }
+
+        if (clicked.currentObstacle != null)
+            StartCoroutine(ExecuteAttackObstacle(clicked.currentObstacle));
+        else if (clicked.currentCreatureOnTile != null)
+            StartCoroutine(ExecuteAttack(clicked.currentCreatureOnTile));
+        else
+            CancelAction();
+    }
+
+    void HandleSpecialClick(Tile clicked)
+    {
+        if (pendingMove == null) { CancelAction(); return; }
+
+        List<Tile> validTiles = pendingMove.GetValidTargetTiles(selectedCreature);
+        if (validTiles.Contains(clicked))
+            StartCoroutine(ExecuteSpecial(pendingMove, clicked, clicked.currentCreatureOnTile));
+        else
+            CancelAction();
+    }
+
+    // ── Called by ActionUI buttons ───────────────────────────────────────
+    public void SelectActionMode(ActionMode mode)
+    {
+        if (selectedCreature == null || !HasActionsLeft()) return;
+        currentMode = mode;
+        pendingMove = null;
+        RefreshHighlights();
+    }
+
+    public void SelectSpecialMove(CreatureMove move)
+    {
+        if (selectedCreature == null || !HasActionsLeft() || move == null) return;
+
+        currentMode = ActionMode.Special;
+        pendingMove = move;
+        RefreshHighlights();
+
+        if (!move.requiresTarget)
+            StartCoroutine(ExecuteSpecial(move, null, null));
+    }
+
+    void CancelAction()
+    {
+        currentMode = ActionMode.None;
+        pendingMove = null;
+        RefreshHighlights();
+    }
+
+    // ── Coroutine action execution (animation hook, then the actual effect) ──
+    private IEnumerator ExecuteMove(Tile destination)
+    {
+        Creature mover = selectedCreature;
+        yield return StartCoroutine(mover.PlayMoveAnimation());
+        mover.Moveto(destination.transform.position, destination);
+        SpendAction(mover.moveActionCost);
+        FinishAction();
+    }
+
+    private IEnumerator ExecuteAttack(Creature target)
+    {
+        Creature attacker = selectedCreature;
+        yield return StartCoroutine(attacker.PlayAttackAnimation(target));
+        attacker.Attack(target);
+        SpendAction(attacker.attackActionCost);
+        FinishAction();
+    }
+
+    private IEnumerator ExecuteAttackObstacle(Obstacle obstacle)
+    {
+        Creature attacker = selectedCreature;
+        yield return StartCoroutine(attacker.PlayAttackAnimation(null));
+        obstacle.TakeDamage(attacker.attackDamage);
+        SpendAction(attacker.attackActionCost);
+        FinishAction();
+    }
+
+    private IEnumerator ExecuteSpecial(CreatureMove move, Tile targetTile, Creature targetCreature)
+    {
+        Creature user = selectedCreature;
+        yield return StartCoroutine(move.PlayAnimation(user, targetTile, targetCreature));
+        move.Execute(user, targetTile, targetCreature);
+        SpendAction(move.actionCost);
+        FinishAction();
+    }
+
+    void FinishAction()
+    {
+        Deselect();
     }
 
     public void RefreshHighlights()
@@ -189,8 +308,25 @@ public class GameManager : MonoBehaviour
         BlackBoard.gridManager.ResetGridHighlights();
         if (selectedCreature != null)
         {
-            BlackBoard.gridManager.HighlightMoveRange(selectedCreature.currentTile, selectedCreature.moveRange);
-            BlackBoard.gridManager.HighlightAttackRange(selectedCreature.currentTile, selectedCreature.moveRange, selectedCreature.attackRange);
+            switch (currentMode)
+            {
+                case ActionMode.None:
+                    BlackBoard.gridManager.HighlightMoveRange(selectedCreature.currentTile, selectedCreature.moveMinRange, selectedCreature.moveRange);
+                    BlackBoard.gridManager.HighlightAttackRange(selectedCreature.currentTile, selectedCreature.moveMinRange, selectedCreature.moveRange, selectedCreature.attackMinRange, selectedCreature.attackRange);
+                    break;
+                case ActionMode.Move:
+                    BlackBoard.gridManager.HighlightMoveRange(selectedCreature.currentTile, selectedCreature.moveMinRange, selectedCreature.moveRange);
+                    break;
+                case ActionMode.Attack:
+                    foreach (Tile t in BlackBoard.gridManager.GetTilesInRange(selectedCreature.currentTile, selectedCreature.attackMinRange, selectedCreature.attackRange))
+                        t.SetMaterial(t.AttackRangeMaterial);
+                    break;
+                case ActionMode.Special:
+                    if (pendingMove != null)
+                        foreach (Tile t in pendingMove.GetValidTargetTiles(selectedCreature))
+                            t.SetMaterial(BlackBoard.gridManager.moveRangeMaterial);
+                    break;
+            }
         }
         UpdateDeathPointsUI();
     }
@@ -198,12 +334,16 @@ public class GameManager : MonoBehaviour
     void Deselect()
     {
         selectedCreature = null;
+        currentMode = ActionMode.None;
+        pendingMove = null;
         BlackBoard.gridManager.ResetGridHighlights();
         if (Tile.selectedTile != null)
         {
             Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
             Tile.selectedTile = null;
         }
+        if (ActionUI.Instance != null)
+            ActionUI.Instance.Hide();
         UpdateDeathPointsUI();
     }
 
@@ -218,8 +358,6 @@ public class GameManager : MonoBehaviour
         if (deathPointsText != null)
             deathPointsText.text = "Evolutions available: " + deathPoints;
 
-        // Button is interactable when the selected creature has at least one
-        // evolution option available (either slot A or slot B is non-null).
         if (evolveButton != null)
         {
             bool canEvolve = deathPoints > 0
@@ -232,13 +370,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ── Evolution (two-choice flow) ──────────────────────────────────────────
-
-    /// <summary>
-    /// Called when the player presses the Evolve button.
-    /// Opens the choice panel if both options exist; skips straight to
-    /// ExecuteEvolution if only one option is configured.
-    /// </summary>
+    // ── Evolution ─────────────────────────────────────────────────────────
     public void TryEvolveSelected()
     {
         if (selectedCreature == null) return;
@@ -249,13 +381,11 @@ public class GameManager : MonoBehaviour
         bool hasA = selectedCreature.evolvedFormPrefab != null;
         bool hasB = selectedCreature.evolvedFormPrefabB != null;
 
-        if (!hasA && !hasB) return;    // nothing to evolve into
+        if (!hasA && !hasB) return;
 
-        // If only one option is configured, skip the choice panel entirely.
         if (hasA && !hasB) { ExecuteEvolution(selectedCreature.evolvedFormPrefab); return; }
         if (!hasA && hasB) { ExecuteEvolution(selectedCreature.evolvedFormPrefabB); return; }
 
-        // Both options available — show the choice UI.
         if (evolutionChoiceUI == null)
         {
             Debug.LogWarning("GameManager: no EvolutionChoiceUI assigned — falling back to option A.");
@@ -267,32 +397,32 @@ public class GameManager : MonoBehaviour
             selectedCreature.evolvedFormPrefab,
             selectedCreature.evolutionSpriteA,
             selectedCreature.evolutionLabelA,
-
             selectedCreature.evolvedFormPrefabB,
             selectedCreature.evolutionSpriteB,
             selectedCreature.evolutionLabelB
         );
     }
 
-    /// <summary>
-    /// Replaces selectedCreature with the chosen evolved prefab.
-    /// Called either directly (single option) or by EvolutionChoiceUI callback.
-    /// </summary>
     public void ExecuteEvolution(GameObject chosenPrefab)
     {
-        if (chosenPrefab == null) return;
-        if (selectedCreature == null) return;
+        if (chosenPrefab == null || selectedCreature == null) return;
+        StartCoroutine(EvolveRoutine(chosenPrefab));
+    }
 
-        Tile tile = selectedCreature.currentTile;
-        int player = selectedCreature.assignedPlayer;
+    private IEnumerator EvolveRoutine(GameObject chosenPrefab)
+    {
+        Creature evolving = selectedCreature;
+        yield return StartCoroutine(evolving.PlayEvolveAnimation());
 
-        GameObject oldObj = selectedCreature.gameObject;
+        Tile tile = evolving.currentTile;
+        int player = evolving.assignedPlayer;
+        GameObject oldObj = evolving.gameObject;
 
         Creature evolved = Instantiate(chosenPrefab).GetComponent<Creature>();
         evolved.assignedPlayer = player;
         evolved.isEvolved = true;
 
-        tile.currentCreatureOnTile = null;   // break old reference before Destroy
+        tile.currentCreatureOnTile = null;
         Destroy(oldObj);
 
         evolved.Initialize(tile);
@@ -301,21 +431,24 @@ public class GameManager : MonoBehaviour
         deathPoints--;
         SpendAction(1);
         UpdateDeathPointsUI();
-        RefreshHighlights();
         Debug.Log("Evolved into: " + evolved.name);
-    }
 
-    // ────────────────────────────────────────────────────────────────────────
+        FinishAction(); // deselects + hides ActionUI, same as every other action
+    }
 
     public void ClearSelectionState()
     {
         selectedCreature = null;
+        currentMode = ActionMode.None;
+        pendingMove = null;
         BlackBoard.gridManager.ResetGridHighlights();
         if (Tile.selectedTile != null)
         {
             Tile.selectedTile.SetMaterial(Tile.selectedTile.originalMaterial);
             Tile.selectedTile = null;
         }
+        if (ActionUI.Instance != null)
+            ActionUI.Instance.Hide();
     }
 
     public void CheckVictory()
@@ -346,9 +479,20 @@ public class GameManager : MonoBehaviour
             if (hasAny && allDead)
             {
                 int winner = (p == 0) ? 1 : 0;
-                CreaturePreviewManager.Instance.HidePreview();
+                Debug.Log("Victory detected for player " + winner);
+
+                if (CreaturePreviewManager.Instance != null)
+                    CreaturePreviewManager.Instance.HidePreview();
+                else
+                    Debug.LogWarning("CheckVictory: CreaturePreviewManager.Instance is null");
+
                 CreatureUI.HideCurrentStats();
-                LevelManager.Instance.OnBattleVictory(winner);
+
+                if (LevelManager.Instance != null)
+                    LevelManager.Instance.OnBattleVictory(winner);
+                else
+                    Debug.LogWarning("CheckVictory: LevelManager.Instance is null — victory not applied!");
+
                 return;
             }
         }

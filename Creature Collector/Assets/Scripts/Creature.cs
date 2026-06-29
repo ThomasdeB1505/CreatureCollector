@@ -1,3 +1,4 @@
+﻿using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -7,32 +8,38 @@ public class Creature : Unit
     public int assignedPlayer;
 
     public int moveRange;
+    public int moveMinRange = 1; // 1 matches the old behavior
     public int moveActionCost;
+
     public int attackRange;
+    public int attackMinRange = 1; // 1 matches the old behavior
     public int attackDamage;
     public int attackActionCost;
+
     public int health;
+    public int maxHealth = 100; // set to match starting health in the Inspector
     public bool dead;
+
     private CreatureHealthUI healthUI;
     public bool isEvolved = false;
-    public Material playerOneMaterial; // assign blue in inspector
-    public Material playerTwoMaterial; // assign red in inspector
-
+    public Material playerOneMaterial;
+    public Material playerTwoMaterial;
     public GameObject visualAlive, visualDead;
     public GameObject sourcePrefab;
     public Sprite portrait;
-
-    public GameObject evolvedFormPrefab; // assign in Inspector if this creature can evolve
+    public GameObject evolvedFormPrefab;
     public GameObject evolvedFormPrefabB;
-
     public Sprite evolutionSpriteA;
     public Sprite evolutionSpriteB;
-
     public string evolutionLabelA;
     public string evolutionLabelB;
+    public List<CreatureMove> moves;
 
-    public List<CreatureMove> moves; // assign in Inspector
-
+    // ── Defensive Stance state ──────────────────────────────────────────
+    public bool inDefensiveStance = false;
+    [Tooltip("Damage multiplier while in stance - not specified in your spec, tune freely")]
+    public float defensiveStanceDamageMultiplier = 0.5f;
+    private Tile defensiveBlockedTile;
 
     public virtual void Initialize(Tile _startingTile)
     {
@@ -45,7 +52,6 @@ public class Creature : Unit
         healthUI = GetComponent<CreatureHealthUI>();
         if (healthUI != null)
             healthUI.Initialize(this, health);
-        // Apply correct material
         Renderer r = visualAlive.GetComponent<Renderer>()
                   ?? visualAlive.GetComponentInChildren<Renderer>();
         if (BlackBoard.gameManager.playerMaterials != null
@@ -56,7 +62,6 @@ public class Creature : Unit
                 rend.material = mat;
         }
         Debug.Log("Spawned: " + gameObject.name + " at " + _startingTile.gridPosition);
-        // Face correct direction
         transform.rotation = Quaternion.Euler(0, assignedPlayer == 0 ? 90 : -90, 0);
     }
 
@@ -74,35 +79,60 @@ public class Creature : Unit
             _target.TakeDamage(attackDamage);
     }
 
-    public virtual void FriendlyAttack()
-    {
-        
-    }
+    public virtual void FriendlyAttack() { }
+
     public virtual void TakeDamage(int _damage)
     {
+        if (inDefensiveStance)
+            _damage = Mathf.RoundToInt(_damage * defensiveStanceDamageMultiplier);
+
         health -= _damage;
         if (healthUI != null)
-            healthUI.UpdateHearts(health); // ADD
+            healthUI.UpdateHearts(health);
         if (health <= 0)
             Die();
     }
 
-    public void UseMove(int index, Creature target)
+    public void RefreshHealthUI()
     {
-        if (index < moves.Count)
-            moves[index].Execute(this, target);
+        if (healthUI != null)
+            healthUI.UpdateHearts(health);
     }
+
     public virtual void Die()
     {
         dead = true;
         visualAlive.SetActive(false);
         visualDead.SetActive(true);
-
-        // Notify manager if this was a player 1 creature
         if (assignedPlayer == 0)
             BlackBoard.gameManager.OnPlayerCreatureDied();
-
         BlackBoard.gameManager.CheckVictory();
     }
 
+    // ── Defensive Stance ─────────────────────────────────────────────────
+    public void EnterDefensiveStance(Tile secondTile)
+    {
+        inDefensiveStance = true;
+        defensiveBlockedTile = secondTile;
+        if (secondTile != null)
+            secondTile.blocked = true;
+        StartCoroutine(PlayDefensiveStanceEnterAnimation());
+    }
+
+    public void ExitDefensiveStance()
+    {
+        if (!inDefensiveStance) return;
+        inDefensiveStance = false;
+        if (defensiveBlockedTile != null)
+            defensiveBlockedTile.blocked = false;
+        defensiveBlockedTile = null;
+        StartCoroutine(PlayDefensiveStanceExitAnimation());
+    }
+
+    // ── Animation hooks - override per creature subclass, no-op by default ──
+    public virtual IEnumerator PlayMoveAnimation() { yield break; }
+    public virtual IEnumerator PlayAttackAnimation(Creature target) { yield break; }
+    public virtual IEnumerator PlayEvolveAnimation() { yield break; }
+    public virtual IEnumerator PlayDefensiveStanceEnterAnimation() { yield break; }
+    public virtual IEnumerator PlayDefensiveStanceExitAnimation() { yield break; }
 }

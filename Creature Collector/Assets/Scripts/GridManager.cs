@@ -14,27 +14,22 @@ public class GridManager : MonoBehaviour
     public Material darkMaterial;
     public Material moveRangeMaterial;
 
-    public Transform arenaTransform;      // assign your modelled arena object
-    public Vector3 arenaBaseScale = Vector3.one; // the arena's "natural" scale at 7x7
+    public Transform arenaTransform;
+    public Vector3 arenaBaseScale = Vector3.one;
 
     public Tile[,] map;
 
     public float tileHeightOffset = 0.05f;
 
-    //for now it's both an array with a size of 3, and due to time constraints, I'm hard coding it this way
     public GameObject[] playerOneCreaturePrefabs;
     public GameObject[] playerTwoCreaturePrefabs;
-
 
     private void Awake()
     {
         BlackBoard.gridManager = this;
     }
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
 
-    }
+    void Start() { }
 
     public void GenerateGrid()
     {
@@ -48,34 +43,33 @@ public class GridManager : MonoBehaviour
                 GameObject tile = Instantiate(tilePrefab, tilePosition, Quaternion.identity);
                 tile.name = $"Tile {x},{y}";
                 tile.transform.SetParent(transform);
-                Renderer renderer = tile.GetComponentInChildren<Renderer>(); // make sure this is here
+                Renderer renderer = tile.GetComponentInChildren<Renderer>();
                 renderer.material = new Material(isLight ? lightMaterial : darkMaterial);
 
                 Tile tileScript = tile.GetComponent<Tile>();
                 tileScript.gridPosition = new Vector2Int(x, y);
                 tileScript.originalColor = renderer.material.color;
-                map[x,y] = tileScript;
+                map[x, y] = tileScript;
             }
         }
     }
 
     public void SpawnCreatures()
     {
-        Instantiate(playerOneCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[0,0]);
-        Instantiate(playerOneCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[0,3]);
-        Instantiate(playerOneCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[0,6]);
+        Instantiate(playerOneCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[0, 0]);
+        Instantiate(playerOneCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[0, 3]);
+        Instantiate(playerOneCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[0, 6]);
 
         Instantiate(playerTwoCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[6, 0]);
         Instantiate(playerTwoCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[6, 3]);
         Instantiate(playerTwoCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[6, 6]);
-
     }
 
     private List<Tile> GetTileNeighbors(Vector2Int tilePosition)
     {
         List<Tile> neighbors = new List<Tile>();
 
-        for(int x = -1; x <= 1; x++)
+        for (int x = -1; x <= 1; x++)
         {
             for (int y = -1; y <= 1; y++)
             {
@@ -84,19 +78,28 @@ public class GridManager : MonoBehaviour
 
                 if (posX >= 0 && posY >= 0 && posX < width && posY < height && new Vector2Int(posX, posY) != tilePosition)
                 {
-                    neighbors.Add(map[posX, posY]);
+                    Tile neighborTile = map[posX, posY];
+                    // Blocked tiles (e.g. Defensive Stance's second tile) can't be passed through or landed on
+                    if (!neighborTile.blocked)
+                        neighbors.Add(neighborTile);
                 }
             }
         }
 
         return neighbors;
     }
-    
+
     private bool IsDiagonal(Tile a, Tile b)
     {
         int dx = Mathf.Abs(a.gridPosition.x - b.gridPosition.x);
         int dy = Mathf.Abs(a.gridPosition.y - b.gridPosition.y);
         return dx == 1 && dy == 1;
+    }
+
+    public Tile GetTileAt(Vector2Int pos)
+    {
+        if (pos.x < 0 || pos.y < 0 || pos.x >= width || pos.y >= height) return null;
+        return map[pos.x, pos.y];
     }
 
     public void ResetGridHighlights()
@@ -110,7 +113,9 @@ public class GridManager : MonoBehaviour
             }
         }
     }
-    public List<Tile> GetTilesInRange(Tile startTile, int range)
+
+    // minRange/maxRange version. minRange = 1 reproduces the old behavior (excludes the creature's own tile)
+    public List<Tile> GetTilesInRange(Tile startTile, int minRange, int maxRange)
     {
         List<Tile> result = new List<Tile>();
         Queue<(Tile tile, int cost)> queue = new Queue<(Tile, int)>();
@@ -123,13 +128,14 @@ public class GridManager : MonoBehaviour
         {
             var (current, cost) = queue.Dequeue();
 
-            if (cost > 0) result.Add(current);
+            if (cost > 0 && cost >= minRange)
+                result.Add(current);
 
             foreach (Tile neighbor in GetTileNeighbors(current.gridPosition))
             {
                 int moveCost = cost + (IsDiagonal(current, neighbor) ? 2 : 1);
 
-                if (moveCost <= range && (!visited.ContainsKey(neighbor) || visited[neighbor] > moveCost))
+                if (moveCost <= maxRange && (!visited.ContainsKey(neighbor) || visited[neighbor] > moveCost))
                 {
                     visited[neighbor] = moveCost;
                     queue.Enqueue((neighbor, moveCost));
@@ -139,19 +145,26 @@ public class GridManager : MonoBehaviour
         return result;
     }
 
-    public void HighlightMoveRange(Tile creatureTile, int range)
+    // Backwards-compatible overload (minRange = 1, same as the old behavior)
+    public List<Tile> GetTilesInRange(Tile startTile, int maxRange)
     {
-        foreach (Tile tile in GetTilesInRange(creatureTile, range))
+        return GetTilesInRange(startTile, 1, maxRange);
+    }
+
+    public void HighlightMoveRange(Tile creatureTile, int minRange, int maxRange)
+    {
+        foreach (Tile tile in GetTilesInRange(creatureTile, minRange, maxRange))
         {
             tile.inMoveRange = true;
             if (tile != Tile.selectedTile)
                 tile.SetMaterial(moveRangeMaterial);
         }
     }
-    public void HighlightAttackRange(Tile creatureTile, int moveRange, int attackRange)
+
+    public void HighlightAttackRange(Tile creatureTile, int moveMinRange, int moveMaxRange, int attackMinRange, int attackMaxRange)
     {
-        List<Tile> moveTiles = GetTilesInRange(creatureTile, moveRange);
-        List<Tile> attackTiles = GetTilesInRange(creatureTile, attackRange);
+        List<Tile> moveTiles = GetTilesInRange(creatureTile, moveMinRange, moveMaxRange);
+        List<Tile> attackTiles = GetTilesInRange(creatureTile, attackMinRange, attackMaxRange);
 
         foreach (Tile tile in attackTiles)
         {
@@ -163,9 +176,9 @@ public class GridManager : MonoBehaviour
                 tile.SetMaterial(tile.AttackRangeMaterial);
         }
     }
+
     public void SetupGrid(int newWidth, int newHeight)
     {
-        // Destroy old tiles
         if (map != null)
         {
             foreach (Tile t in map)
@@ -183,7 +196,6 @@ public class GridManager : MonoBehaviour
     {
         if (arenaTransform == null) return;
 
-        // Scale proportionally from the base scale (which fits a 7x7 grid)
         float xRatio = (float)width / 7f;
         float zRatio = (float)height / 7f;
 
@@ -193,7 +205,6 @@ public class GridManager : MonoBehaviour
             arenaBaseScale.z * zRatio
         );
 
-        // Re-center
         arenaTransform.position = new Vector3(0, arenaTransform.position.y, 0);
     }
 }
