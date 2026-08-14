@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,22 +9,22 @@ public class LevelManager : MonoBehaviour
 
     public EncounterChoiceUI encounterChoiceUI;
     public PlacementManager placementManager;
-    public CaptureUI captureUI;
+    public CraftingManager craftingManager;
 
-    public GameObject gameOverScreen;   // Optional: for when player 2 wins
-    public GameObject allLevelsClearScreen; // Optional: end screen
+    public GameObject gameOverScreen;
+    public GameObject allLevelsClearScreen;
+    public GameObject combatCanvas; // assign in Inspector: the canvas holding ActionUI, turn text, action points, etc.
 
     private int currentLevelIndex = 0;
     private EncounterOption chosenEncounter;
-    private List<Creature> spawnedEnemies = new List<Creature>();
-    private List<GameObject> spawnedEnemyPrefabs = new List<GameObject>();
-
+    private HashSet<EssenceType> essenceEarnedThisEncounter = new();
 
     void Awake() => Instance = this;
 
     void Start()
     {
-        LoadLevel(currentLevelIndex);
+        // Forced initial form + craft before anything else
+        craftingManager.ForceInitialCraft(FormType.Attack, () => LoadLevel(currentLevelIndex));
     }
 
     public void LoadLevel(int index)
@@ -33,54 +32,38 @@ public class LevelManager : MonoBehaviour
         currentLevelIndex = index;
         LevelData level = levels[index];
 
-        // Build grid
-        BlackBoard.gridManager.SetupGrid(level.gridWidth, level.gridHeight);
+        combatCanvas.SetActive(false); // hub/prep phase - hide combat UI
 
-        // Center camera
-        CameraController.Instance.CenterOnGrid(level.gridWidth, level.gridHeight);
+        // Grid size is now fixed on GridManager itself (inspector), not per-level.
+        BlackBoard.gridManager.SetupGrid();
+        CameraController.Instance.CenterOnGrid(BlackBoard.gridManager.width, BlackBoard.gridManager.height);
 
-        // Show encounter choice
         encounterChoiceUI.Show(level.encounterOptions, OnEncounterChosen);
-    }
-    List<Creature> GetAliveEnemies()
-    {
-        var list = new List<Creature>();
-
-        foreach (var c in FindObjectsByType<Creature>(FindObjectsSortMode.None))
-        {
-            if (c.assignedPlayer == 1 && !c.dead)
-                list.Add(c);
-        }
-
-        return list;
-    }
-
-    List<GameObject> BuildCaptureOptions()
-    {
-        Debug.Log($"BuildCaptureOptions: {spawnedEnemyPrefabs.Count} prefabs stored");
-        return new List<GameObject>(spawnedEnemyPrefabs);
     }
 
     void OnEncounterChosen(EncounterOption chosen)
     {
         chosenEncounter = chosen;
-        spawnedEnemies.Clear();
+        essenceEarnedThisEncounter.Clear();
 
         LevelData level = levels[currentLevelIndex];
 
-        // Auto-place enemy (Player 2) creatures on their side
         PlaceEnemyCreatures(chosen.enemyCreaturePrefabs, level);
 
-        // Let Player 1 place their creatures
+        // Obstacles go in after enemies are placed and before the player places,
+        // so they can avoid both reserved columns.
+        BlackBoard.gridManager.PlaceObstacles();
+
+        combatCanvas.SetActive(true); // turn back on before placement/combat begins
+
         GameObject[] playerPrefabs = PlayerRoster.Instance.GetCreaturesForLevel(level.playerCreatureCount);
-        placementManager.StartPlacement(playerPrefabs, level.gridWidth, level.gridHeight, OnPlacementDone);
+        placementManager.StartPlacement(playerPrefabs, BlackBoard.gridManager.width, BlackBoard.gridManager.height, OnPlacementDone);
     }
 
     void PlaceEnemyCreatures(GameObject[] prefabs, LevelData level)
     {
-        spawnedEnemyPrefabs.Clear();
-        int x = level.gridWidth - 1;
-        int[] ySlots = EvenlySpaced(prefabs.Length, level.gridHeight);
+        int x = BlackBoard.gridManager.width - 1;
+        int[] ySlots = EvenlySpaced(prefabs.Length, BlackBoard.gridManager.height);
 
         for (int i = 0; i < prefabs.Length; i++)
         {
@@ -89,24 +72,15 @@ public class LevelManager : MonoBehaviour
             c.assignedPlayer = 1;
             c.Initialize(tile);
             c.sourcePrefab = prefabs[i];
-            spawnedEnemies.Add(c);
-            spawnedEnemyPrefabs.Add(prefabs[i]); // store directly
         }
     }
 
     int[] EvenlySpaced(int count, int gridHeight)
     {
         int[] positions = new int[count];
-        if (count == 1)
-        {
-            positions[0] = gridHeight / 2;
-        }
-        else
-        {
-            float step = (gridHeight - 1f) / (count - 1);
-            for (int i = 0; i < count; i++)
-                positions[i] = Mathf.RoundToInt(i * step);
-        }
+        if (count == 1) { positions[0] = gridHeight / 2; return positions; }
+        float step = (gridHeight - 1f) / (count - 1);
+        for (int i = 0; i < count; i++) positions[i] = Mathf.RoundToInt(i * step);
         return positions;
     }
 
@@ -115,26 +89,32 @@ public class LevelManager : MonoBehaviour
         BlackBoard.gameManager.StartBattle();
     }
 
-    // Called by GameManager.CheckVictory() instead of showing its own screen
+    // Called by Creature.Die() whenever an enemy (assignedPlayer == 1) dies
+    public void OnEnemyCreatureDied(Creature enemy)
+    {
+        craftingManager.AddEssence(enemy.essenceDropType);
+        essenceEarnedThisEncounter.Add(enemy.essenceDropType);
+    }
+
     public void OnBattleVictory(int winnerPlayer)
     {
         if (winnerPlayer == 0)
         {
             BlackBoard.gameManager.ClearSelectionState();
-            BlackBoard.gameManager.SetCapturing(true);
 
             bool isLastLevel = currentLevelIndex >= levels.Length - 1;
+            craftingManager.AddForm(chosenEncounter.formReward);
 
             if (isLastLevel)
             {
-                BlackBoard.gameManager.SetCapturing(false);
                 if (allLevelsClearScreen != null)
                     allLevelsClearScreen.SetActive(true);
             }
             else
             {
-                var options = BuildCaptureOptions();
-                captureUI.Show(options, OnCaptureDone);
+                CleanupLevel();
+                combatCanvas.SetActive(false);
+                craftingManager.ShowHub(OnHubDone);
             }
         }
         else
@@ -144,12 +124,8 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    void OnCaptureDone(GameObject capturedPrefab)
+    void OnHubDone()
     {
-        BlackBoard.gameManager.SetCapturing(false);
-        PlayerRoster.Instance.AddCreature(capturedPrefab);
-        CleanupLevel();
-
         currentLevelIndex++;
         if (currentLevelIndex < levels.Length)
             LoadLevel(currentLevelIndex);

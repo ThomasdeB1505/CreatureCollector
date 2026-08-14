@@ -21,19 +21,30 @@ public class Creature : Unit
     public bool dead;
 
     private CreatureHealthUI healthUI;
-    public bool isEvolved = false;
     public Material playerOneMaterial;
     public Material playerTwoMaterial;
     public GameObject visualAlive, visualDead;
     public GameObject sourcePrefab;
     public Sprite portrait;
-    public GameObject evolvedFormPrefab;
-    public GameObject evolvedFormPrefabB;
-    public Sprite evolutionSpriteA;
-    public Sprite evolutionSpriteB;
-    public string evolutionLabelA;
-    public string evolutionLabelB;
+    [TextArea]
+    public string description;
     public List<CreatureMove> moves;
+    [Header("Crafting Identity")]
+    public FormType form;
+    public EssenceType essence;
+
+    [Header("Evolution (in-combat, temporary)")]
+    public bool isEvolvedThisCombat = false;
+    public GameObject formEvolutionPrefab;
+    public Sprite formEvolutionSprite;
+    public string formEvolutionDescription; // was "label" - now a fuller explanation of what it does
+
+    public GameObject essenceEvolutionPrefab;
+    public Sprite essenceEvolutionSprite;
+    public string essenceEvolutionDescription;
+
+    [Header("Enemy Essence Drop")]
+    public EssenceType essenceDropType;
 
     // ── Defensive Stance state ──────────────────────────────────────────
     public bool inDefensiveStance = false;
@@ -107,6 +118,8 @@ public class Creature : Unit
         if (assignedPlayer == 0)
             BlackBoard.gameManager.OnPlayerCreatureDied();
         BlackBoard.gameManager.CheckVictory();
+        if (assignedPlayer == 1) // enemy
+            LevelManager.Instance.OnEnemyCreatureDied(this);
     }
 
     // ── Defensive Stance ─────────────────────────────────────────────────

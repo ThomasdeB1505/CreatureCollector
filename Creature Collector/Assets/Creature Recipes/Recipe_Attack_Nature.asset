@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f176930df1e08747a843fa9dbf7e6a7, type: 3}
+  m_Name: Recipe_Attack_Nature
+  m_EditorClassIdentifier: 
+  form: 0
+  essence: 1
+  resultPrefab: {fileID: 515647913151561499, guid: eddffb28d76fbdb45948e0daabeac242, type: 3}

@@ -24,17 +24,18 @@ public class GameManager : MonoBehaviour
     public Material[] playerSkyboxes;
     public GameObject victoryScreen;
     public TextMeshProUGUI victoryText;
-    public int deathPoints = 0;
-    public TextMeshProUGUI deathPointsText;
-    public Button evolveButton; // legacy standalone button - safe to leave unassigned if ActionUI replaces it
     private bool battleStarted = false;
     private bool isCapturing = false;
     public void SetCapturing(bool value) => isCapturing = value;
     public Material[] playerMaterials;
 
-    [Header("Evolution Choice")]
-    [Tooltip("The EvolutionChoiceUI panel in the scene.")]
-    public EvolutionChoiceUI evolutionChoiceUI;
+    [Header("Evolution")]
+    public int evolutionUnlockTurn = 5; // global turn count before anyone can evolve
+    private int globalTurnCount = 0;
+
+    public EvolutionPopupUI evolutionPopupUI; // new popup, see below
+
+    public bool EvolutionUnlocked => globalTurnCount >= evolutionUnlockTurn;
 
     private void Awake()
     {
@@ -60,8 +61,6 @@ public class GameManager : MonoBehaviour
     public void StartBattle()
     {
         battleStarted = true;
-        deathPoints = 0;
-        UpdateDeathPointsUI();
         currentPlayer = 0;
         StartTurn();
     }
@@ -84,6 +83,9 @@ public class GameManager : MonoBehaviour
             if (c.assignedPlayer == currentPlayer && c.inDefensiveStance)
                 c.ExitDefensiveStance();
         }
+
+        if (currentPlayer == 0)
+            globalTurnCount++;
 
         if (ActionUI.Instance != null)
             ActionUI.Instance.Hide();
@@ -121,6 +123,7 @@ public class GameManager : MonoBehaviour
     // ── Tile clicks ──────────────────────────────────────────────────────
     public void ClickOnTile(Tile _clicked)
     {
+        if (currentPlayer != 0) return; // block all human input during AI's turn
         if (isCapturing) return;
         if (PlacementManager.Instance.IsPlacing)
         {
@@ -328,7 +331,6 @@ public class GameManager : MonoBehaviour
                     break;
             }
         }
-        UpdateDeathPointsUI();
     }
 
     void Deselect()
@@ -344,96 +346,10 @@ public class GameManager : MonoBehaviour
         }
         if (ActionUI.Instance != null)
             ActionUI.Instance.Hide();
-        UpdateDeathPointsUI();
     }
 
     public void OnPlayerCreatureDied()
     {
-        deathPoints++;
-        UpdateDeathPointsUI();
-    }
-
-    void UpdateDeathPointsUI()
-    {
-        if (deathPointsText != null)
-            deathPointsText.text = "Evolutions available: " + deathPoints;
-
-        if (evolveButton != null)
-        {
-            bool canEvolve = deathPoints > 0
-                && selectedCreature != null
-                && !selectedCreature.isEvolved
-                && (selectedCreature.evolvedFormPrefab != null
-                    || selectedCreature.evolvedFormPrefabB != null);
-
-            evolveButton.interactable = canEvolve;
-        }
-    }
-
-    // ── Evolution ─────────────────────────────────────────────────────────
-    public void TryEvolveSelected()
-    {
-        if (selectedCreature == null) return;
-        if (selectedCreature.isEvolved) return;
-        if (deathPoints <= 0) return;
-        if (!HasActionsLeft()) return;
-
-        bool hasA = selectedCreature.evolvedFormPrefab != null;
-        bool hasB = selectedCreature.evolvedFormPrefabB != null;
-
-        if (!hasA && !hasB) return;
-
-        if (hasA && !hasB) { ExecuteEvolution(selectedCreature.evolvedFormPrefab); return; }
-        if (!hasA && hasB) { ExecuteEvolution(selectedCreature.evolvedFormPrefabB); return; }
-
-        if (evolutionChoiceUI == null)
-        {
-            Debug.LogWarning("GameManager: no EvolutionChoiceUI assigned — falling back to option A.");
-            ExecuteEvolution(selectedCreature.evolvedFormPrefab);
-            return;
-        }
-
-        evolutionChoiceUI.Show(
-            selectedCreature.evolvedFormPrefab,
-            selectedCreature.evolutionSpriteA,
-            selectedCreature.evolutionLabelA,
-            selectedCreature.evolvedFormPrefabB,
-            selectedCreature.evolutionSpriteB,
-            selectedCreature.evolutionLabelB
-        );
-    }
-
-    public void ExecuteEvolution(GameObject chosenPrefab)
-    {
-        if (chosenPrefab == null || selectedCreature == null) return;
-        StartCoroutine(EvolveRoutine(chosenPrefab));
-    }
-
-    private IEnumerator EvolveRoutine(GameObject chosenPrefab)
-    {
-        Creature evolving = selectedCreature;
-        yield return StartCoroutine(evolving.PlayEvolveAnimation());
-
-        Tile tile = evolving.currentTile;
-        int player = evolving.assignedPlayer;
-        GameObject oldObj = evolving.gameObject;
-
-        Creature evolved = Instantiate(chosenPrefab).GetComponent<Creature>();
-        evolved.assignedPlayer = player;
-        evolved.isEvolved = true;
-
-        tile.currentCreatureOnTile = null;
-        Destroy(oldObj);
-
-        evolved.Initialize(tile);
-        selectedCreature = evolved;
-
-        deathPoints--;
-        SpendAction(1);
-        UpdateDeathPointsUI();
-        Debug.Log("Evolved into: " + evolved.name);
-
-        FinishAction(); // deselects + hides ActionUI, same as every other action
     }
 
     public void ClearSelectionState()
@@ -449,6 +365,49 @@ public class GameManager : MonoBehaviour
         }
         if (ActionUI.Instance != null)
             ActionUI.Instance.Hide();
+    }
+    public void TryEvolveSelected()
+    {
+        if (selectedCreature == null) return;
+        if (selectedCreature.isEvolvedThisCombat) return;
+        if (!EvolutionUnlocked) return;
+        if (!HasActionsLeft()) return;
+
+        bool hasForm = selectedCreature.formEvolutionPrefab != null;
+        bool hasEssence = selectedCreature.essenceEvolutionPrefab != null;
+        if (!hasForm && !hasEssence) return;
+
+        evolutionPopupUI.Show(selectedCreature); // shows both options if present, image + description, no cost
+    }
+
+    public void ExecuteEvolution(GameObject chosenPrefab)
+    {
+        if (chosenPrefab == null || selectedCreature == null) return;
+        StartCoroutine(EvolveRoutine(chosenPrefab));
+    }
+
+    private IEnumerator EvolveRoutine(GameObject chosenPrefab)
+    {
+        Creature evolving = selectedCreature;
+        yield return StartCoroutine(evolving.PlayEvolveAnimation());
+
+        Tile tile = evolving.currentTile;
+        int player = evolving.assignedPlayer;
+        GameObject originalSource = evolving.sourcePrefab; // remember for revert
+        GameObject oldObj = evolving.gameObject;
+
+        tile.currentCreatureOnTile = null;
+        Destroy(oldObj);
+
+        Creature evolved = Instantiate(chosenPrefab).GetComponent<Creature>();
+        evolved.assignedPlayer = player;
+        evolved.isEvolvedThisCombat = true;
+        evolved.sourcePrefab = originalSource; // carry forward so revert still works after evolving
+        evolved.Initialize(tile);
+
+        selectedCreature = evolved;
+        SpendAction(1);
+        FinishAction();
     }
 
     public void CheckVictory()

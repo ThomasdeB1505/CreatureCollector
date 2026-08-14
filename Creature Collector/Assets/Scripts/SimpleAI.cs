@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,6 +11,26 @@ public class SimpleAI : MonoBehaviour
     {
         yield return new WaitForSeconds(0.6f);
         var (myCreatures, enemies) = GetLivingCreatures();
+
+        // ── Evolve first if unlocked - simple heuristic: evolve the first
+        // eligible creature that hasn't evolved yet this combat. ──────────────
+        if (BlackBoard.gameManager.EvolutionUnlocked)
+        {
+            foreach (Creature mine in myCreatures)
+            {
+                if (mine.isEvolvedThisCombat) continue;
+
+                GameObject chosen = mine.formEvolutionPrefab != null
+                    ? mine.formEvolutionPrefab
+                    : mine.essenceEvolutionPrefab;
+
+                if (chosen != null)
+                {
+                    yield return StartCoroutine(EvolveAICreature(mine, chosen));
+                    break; // one evolution per turn
+                }
+            }
+        }
 
         for (int i = 0; i < actionsAvailable; i++)
         {
@@ -50,8 +70,6 @@ public class SimpleAI : MonoBehaviour
             // --- 2. If no attack, move the creature with the best strategic tile ---
             if (!acted)
             {
-                // Actions remaining after this move � used to decide whether
-                // entering attack range is safe or a wasted exposure
                 int actionsAfterThisMove = actionsAvailable - i - 1;
 
                 Creature bestMover = null;
@@ -83,9 +101,27 @@ public class SimpleAI : MonoBehaviour
         BlackBoard.gameManager.EndTurn();
     }
 
+    // ── AI evolution execution ────────────────────────────────────────────────
+    IEnumerator EvolveAICreature(Creature creature, GameObject chosenPrefab)
+    {
+        yield return creature.StartCoroutine(creature.PlayEvolveAnimation());
+
+        Tile tile = creature.currentTile;
+        int player = creature.assignedPlayer;
+        GameObject sourcePrefab = creature.sourcePrefab;
+
+        tile.currentCreatureOnTile = null;
+        Object.Destroy(creature.gameObject);
+
+        Creature evolved = Object.Instantiate(chosenPrefab).GetComponent<Creature>();
+        evolved.assignedPlayer = player;
+        evolved.isEvolvedThisCombat = true;
+        evolved.sourcePrefab = sourcePrefab;
+        evolved.Initialize(tile);
+    }
+
     // -----------------------------------------------------------------------
-    // Danger zone: every tile a player-0 creature could attack this turn,
-    // accounting for both their movement range AND their attack range.
+    // Danger zone, attack targeting, movement scoring, helpers - unchanged
     // -----------------------------------------------------------------------
     HashSet<Vector2Int> BuildDangerZones(List<Creature> enemies)
     {
@@ -109,10 +145,6 @@ public class SimpleAI : MonoBehaviour
         return danger;
     }
 
-    // -----------------------------------------------------------------------
-    // Attack target: prefer finishing off weak enemies (kill priority),
-    // fall back to whoever has the lowest HP.
-    // -----------------------------------------------------------------------
     Creature FindBestAttackTarget(Creature attacker, List<Creature> enemies)
     {
         List<Tile> inRange = BlackBoard.gridManager.GetTilesInRange(
@@ -140,34 +172,24 @@ public class SimpleAI : MonoBehaviour
     {
         int score = 0;
 
-        // Huge bonus for a killing blow
         if (target.health <= attacker.attackDamage)
             score += 1000;
 
-        // Prefer lower HP targets
         score -= target.health;
 
-        // Bonus for attacking from a safe tile
         if (!dangerZones.Contains(attacker.gridPosition))
             score += 100;
 
-        // Bonus for attacking an enemy that is already threatening us
         if (dangerZones.Contains(attacker.currentTile.gridPosition))
             score += 200;
 
         return score;
     }
 
-    // -----------------------------------------------------------------------
-    // Movement: approach the best target while respecting danger zones.
-    // Only commit to entering attack range if we have an action left to
-    // actually attack � otherwise hold at a safe distance.
-    // -----------------------------------------------------------------------
     (Tile tile, float score) FindBestMoveTile(
         Creature mover, List<Creature> enemies,
         HashSet<Vector2Int> dangerZones, int actionsAfterThisMove)
     {
-        // Target the lowest HP enemy to focus fire
         Creature target = null;
         int lowestHP = int.MaxValue;
         foreach (Creature e in enemies)
@@ -203,10 +225,8 @@ public class SimpleAI : MonoBehaviour
             if (inAttackRange)
             {
                 if (actionsAfterThisMove > 0)
-                    // We can follow up with an attack � moving here is worthwhile
                     score += 60f;
                 else
-                    // No actions left to attack; entering range just eats a free hit
                     score -= 60f;
             }
 
@@ -216,9 +236,6 @@ public class SimpleAI : MonoBehaviour
         return (best, bestScore);
     }
 
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
     (List<Creature> mine, List<Creature> enemies) GetLivingCreatures()
     {
         var mine = new List<Creature>();

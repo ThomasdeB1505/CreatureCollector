@@ -35,15 +35,16 @@ public class ActionUI : MonoBehaviour
             BlackBoard.gameManager.SelectActionMode(ActionMode.Attack);
         });
         specialButton.onClick.AddListener(ToggleSpecialMovesPanel);
+        AddHoverDescription(moveButton.gameObject, "Move this creature within its move range.");
+        AddHoverDescription(attackButton.gameObject, "Attack an enemy creature within attack range.");
+        AddHoverDescription(specialButton.gameObject, "Choose one of this creature's special moves.");
+        Hide();
         evolveButton.onClick.AddListener(() => {
             CloseSpecialMovesPanel();
             BlackBoard.gameManager.TryEvolveSelected();
         });
-        AddHoverDescription(moveButton.gameObject, "Move this creature within its move range.");
-        AddHoverDescription(attackButton.gameObject, "Attack an enemy creature within attack range.");
-        AddHoverDescription(specialButton.gameObject, "Choose one of this creature's special moves.");
-        AddHoverDescription(evolveButton.gameObject, "Evolve this creature using an available evolution point.");
-        Hide();
+        AddHoverDescription(evolveButton.gameObject, "Evolve this creature (unlocks after enough turns have passed).");
+
     }
     void CloseSpecialMovesPanel()
     {
@@ -66,10 +67,10 @@ public class ActionUI : MonoBehaviour
         panelRoot.SetActive(true);
         specialMovesPanel.SetActive(false);
         HideDescription();
-        evolveButton.interactable = !creature.isEvolved
-            && BlackBoard.gameManager.deathPoints > 0
-            && (creature.evolvedFormPrefab != null || creature.evolvedFormPrefabB != null);
         specialButton.interactable = creature.moves != null && creature.moves.Count > 0;
+        evolveButton.interactable = !creature.isEvolvedThisCombat
+    && BlackBoard.gameManager.EvolutionUnlocked
+    && (creature.formEvolutionPrefab != null || creature.essenceEvolutionPrefab != null);
     }
     public void Hide()
     {

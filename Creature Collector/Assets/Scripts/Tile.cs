@@ -45,8 +45,9 @@ public class Tile : MonoBehaviour
             PlacementManager.Instance.HighlightPlacementZone();
         if (selectedTile != this)
             SetMaterial(HighlighMaterial);
+
+        if (currentCreatureOnTile != null)
         {
-            CreaturePreviewManager.Instance.ShowPreview(currentCreatureOnTile.gameObject);
             currentCreatureOnTile.GetComponent<CreatureUI>().ShowStats();
             if (BlackBoard.gameManager.GetSelectedCreature() == null)
             {

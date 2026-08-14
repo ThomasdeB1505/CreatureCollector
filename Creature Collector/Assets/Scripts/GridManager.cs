@@ -14,6 +14,10 @@ public class GridManager : MonoBehaviour
     public Material darkMaterial;
     public Material moveRangeMaterial;
 
+    [Header("Obstacles")]
+    public GameObject obstaclePrefab;
+    public int obstacleCount = 6;
+
     public Transform arenaTransform;
     public Vector3 arenaBaseScale = Vector3.one;
 
@@ -56,13 +60,16 @@ public class GridManager : MonoBehaviour
 
     public void SpawnCreatures()
     {
-        Instantiate(playerOneCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[0, 0]);
-        Instantiate(playerOneCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[0, 3]);
-        Instantiate(playerOneCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[0, 6]);
+        int midY = height / 2;
+        int quarterY = height / 4;
 
-        Instantiate(playerTwoCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[6, 0]);
-        Instantiate(playerTwoCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[6, 3]);
-        Instantiate(playerTwoCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[6, 6]);
+        Instantiate(playerOneCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[0, quarterY]);
+        Instantiate(playerOneCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[0, midY]);
+        Instantiate(playerOneCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[0, height - 1 - quarterY]);
+
+        Instantiate(playerTwoCreaturePrefabs[0]).GetComponent<Creature>().Initialize(map[width - 1, quarterY]);
+        Instantiate(playerTwoCreaturePrefabs[1]).GetComponent<Creature>().Initialize(map[width - 1, midY]);
+        Instantiate(playerTwoCreaturePrefabs[2]).GetComponent<Creature>().Initialize(map[width - 1, height - 1 - quarterY]);
     }
 
     private List<Tile> GetTileNeighbors(Vector2Int tilePosition)
@@ -79,7 +86,7 @@ public class GridManager : MonoBehaviour
                 if (posX >= 0 && posY >= 0 && posX < width && posY < height && new Vector2Int(posX, posY) != tilePosition)
                 {
                     Tile neighborTile = map[posX, posY];
-                    // Blocked tiles (e.g. Defensive Stance's second tile) can't be passed through or landed on
+                    // Blocked tiles (e.g. Defensive Stance's second tile, or an obstacle) can't be passed through or landed on
                     if (!neighborTile.blocked)
                         neighbors.Add(neighborTile);
                 }
@@ -177,6 +184,13 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    // Rebuilds the grid at its current inspector-set width/height.
+    // Use this instead of SetupGrid(w, h) now that grid size is fixed, not per-level.
+    public void SetupGrid()
+    {
+        SetupGrid(width, height);
+    }
+
     public void SetupGrid(int newWidth, int newHeight)
     {
         if (map != null)
@@ -190,6 +204,58 @@ public class GridManager : MonoBehaviour
         map = new Tile[width, height];
         GenerateGrid();
         ScaleArena();
+    }
+
+    // Tiles that must never get an obstacle: the player's placement column (x == 0)
+    // and the enemy spawn column (x == width - 1).
+    private List<Vector2Int> GetReservedPositions()
+    {
+        List<Vector2Int> reserved = new List<Vector2Int>();
+        for (int y = 0; y < height; y++)
+        {
+            reserved.Add(new Vector2Int(0, y));
+            reserved.Add(new Vector2Int(width - 1, y));
+        }
+        return reserved;
+    }
+
+    // Randomly places obstacleCount obstacles on the grid, skipping reserved columns.
+    // Call this AFTER enemy creatures are placed and BEFORE player placement starts -
+    // NOT inside SetupGrid(), since it depends on things that happen after grid generation.
+    public void PlaceObstacles()
+    {
+        if (obstaclePrefab == null)
+        {
+            Debug.LogWarning("GridManager.PlaceObstacles: obstaclePrefab is not assigned in the inspector.");
+            return;
+        }
+
+        List<Vector2Int> reserved = GetReservedPositions();
+        List<Vector2Int> candidates = new List<Vector2Int>();
+
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                if (!reserved.Contains(pos))
+                    candidates.Add(pos);
+            }
+
+        // Fisher-Yates shuffle
+        for (int i = candidates.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+        }
+
+        int count = Mathf.Min(obstacleCount, candidates.Count);
+        for (int i = 0; i < count; i++)
+        {
+            Tile tile = GetTileAt(candidates[i]);
+            GameObject obstacleObj = Instantiate(obstaclePrefab, transform);
+            obstacleObj.GetComponent<Obstacle>().Initialize(tile);
+            tile.blocked = true;
+        }
     }
 
     void ScaleArena()
