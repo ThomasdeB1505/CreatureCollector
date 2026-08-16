@@ -163,10 +163,14 @@ MonoBehaviour:
   HighlighMaterial: {fileID: 2100000, guid: 3cabb7aed7112bf49ae900082f79d2b3, type: 2}
   SelectedMaterial: {fileID: 2100000, guid: f838a3d37e31b614883667c239be8a35, type: 2}
   AttackRangeMaterial: {fileID: 2100000, guid: 132f49f2022d1a44fa05387e1049f758, type: 2}
-  originalMaterial: {fileID: 0}
+  originalMaterial: {fileID: 2100000, guid: dd92546016a5fd3448adb59d6d4e59f0, type: 2}
   CombinedRangeMaterial: {fileID: 2100000, guid: 60d88217264f62446ae806942f1f0d2a, type: 2}
   inMoveRange: 0
   currentCreatureOnTile: {fileID: 0}
+  blocked: 0
+  currentObstacle: {fileID: 0}
+  poisonMaterial: {fileID: 0}
+  poisoned: 0
 --- !u!65 &1877252012580629833
 BoxCollider:
   m_ObjectHideFlags: 0

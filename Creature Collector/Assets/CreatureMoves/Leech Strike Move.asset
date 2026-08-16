@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 768cf1c179b66754e9e4b58c0f3b804b, type: 3}
+  m_Name: Leech Strike Move
+  m_EditorClassIdentifier: 
+  moveName: Leech Strike
+  description: Strike an enemy and heal for half the damage dealt.
+  actionCost: 2
+  requiresTarget: 1
+  damage: 4

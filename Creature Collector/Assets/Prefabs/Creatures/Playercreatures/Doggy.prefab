@@ -41,6 +41,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
+      propertyPath: essenceDropType
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: evolvedFormPrefab
       value: 
       objectReference: {fileID: 515647913151561499, guid: b74ec6a1b6620724589febaeb4222588, type: 3}

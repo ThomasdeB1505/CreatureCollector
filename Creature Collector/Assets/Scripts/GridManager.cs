@@ -13,6 +13,7 @@ public class GridManager : MonoBehaviour
     public Material lightMaterial;
     public Material darkMaterial;
     public Material moveRangeMaterial;
+    public Material aoeRadiusMaterial; // assign in Inspector, e.g. orange or purple
 
     [Header("Obstacles")]
     public GameObject obstaclePrefab;

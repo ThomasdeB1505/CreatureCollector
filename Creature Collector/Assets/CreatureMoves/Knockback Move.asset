@@ -9,12 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c4fcd0583ef98e043b47ef98b9eafdde, type: 3}
-  m_Name: New Shockwave Move
+  m_Script: {fileID: 11500000, guid: 00219221675843949b9734ca82333784, type: 3}
+  m_Name: Knockback Move
   m_EditorClassIdentifier: 
-  moveName: Shockwave
-  description: Damage a target and everything around it.
+  moveName: Knockback
+  description: Damage an enemy for 5 damage and push it back one tile.
   actionCost: 2
-  requiresTarget: 0
-  damage: 15
-  radius: 1
+  requiresTarget: 1
+  damage: 5

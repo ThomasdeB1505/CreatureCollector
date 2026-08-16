@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: health
-      value: 1
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: portrait
@@ -22,7 +22,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: attackDamage
-      value: 5
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: -8831931340654186097, guid: b2437ad183fa66945a2c3826b40b90f8, type: 3}
       propertyPath: sourcePrefab

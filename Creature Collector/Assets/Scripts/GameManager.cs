@@ -28,6 +28,7 @@ public class GameManager : MonoBehaviour
     private bool isCapturing = false;
     public void SetCapturing(bool value) => isCapturing = value;
     public Material[] playerMaterials;
+    private bool victoryCheckQueued = false;
 
     [Header("Evolution")]
     public int evolutionUnlockTurn = 5; // global turn count before anyone can evolve
@@ -326,8 +327,17 @@ public class GameManager : MonoBehaviour
                     break;
                 case ActionMode.Special:
                     if (pendingMove != null)
-                        foreach (Tile t in pendingMove.GetValidTargetTiles(selectedCreature))
+                    {
+                        List<Tile> validTiles = pendingMove.GetValidTargetTiles(selectedCreature);
+                        foreach (Tile t in validTiles)
                             t.SetMaterial(BlackBoard.gridManager.moveRangeMaterial);
+
+                        if (Tile.hoveredTile != null && validTiles.Contains(Tile.hoveredTile))
+                        {
+                            foreach (Tile t in pendingMove.GetAffectedTiles(Tile.hoveredTile))
+                                t.SetMaterial(BlackBoard.gridManager.aoeRadiusMaterial);
+                        }
+                    }
                     break;
             }
         }
@@ -368,6 +378,7 @@ public class GameManager : MonoBehaviour
     }
     public void TryEvolveSelected()
     {
+        Debug.Log($"TryEvolve called. selected={selectedCreature}, evolved={selectedCreature?.isEvolvedThisCombat}, unlocked={EvolutionUnlocked}, actionsLeft={HasActionsLeft()}");
         if (selectedCreature == null) return;
         if (selectedCreature.isEvolvedThisCombat) return;
         if (!EvolutionUnlocked) return;
@@ -410,32 +421,44 @@ public class GameManager : MonoBehaviour
         FinishAction();
     }
 
+    public void RequestVictoryCheck()
+    {
+        if (victoryCheckQueued) return;
+        victoryCheckQueued = true;
+        StartCoroutine(DeferredVictoryCheck());
+    }
+
+    private IEnumerator DeferredVictoryCheck()
+    {
+        yield return new WaitForEndOfFrame();
+        victoryCheckQueued = false;
+        CheckVictory();
+    }
+
     public void CheckVictory()
     {
         Creature[] allCreatures = FindObjectsByType<Creature>(FindObjectsSortMode.None);
         Debug.Log("CheckVictory called. Creatures found: " + allCreatures.Length);
 
+        bool[] hasAny = new bool[amountOfPlayers];
+        bool[] hasLiving = new bool[amountOfPlayers];
+
+        foreach (Creature c in allCreatures)
+        {
+            int p = c.assignedPlayer;
+            if (p < 0 || p >= amountOfPlayers) continue;
+
+            hasAny[p] = true;
+            if (!c.dead && c.health > 0)
+                hasLiving[p] = true;
+        }
+
+        // Check player 0 first: if the player's team is wiped, that's a loss for them
+        // even if the enemy also got wiped in the same action (e.g. mutual-kill self-destruct).
         for (int p = 0; p < amountOfPlayers; p++)
         {
-            bool hasAny = false;
-            bool allDead = true;
-
-            foreach (Creature c in allCreatures)
-            {
-                if (!c.enabled) continue;
-
-                if (c.assignedPlayer == p)
-                {
-                    hasAny = true;
-                    if (c.health > 0)
-                    {
-                        allDead = false;
-                        break;
-                    }
-                }
-            }
-
-            if (hasAny && allDead)
+            bool wiped = hasAny[p] && !hasLiving[p];
+            if (wiped)
             {
                 int winner = (p == 0) ? 1 : 0;
                 Debug.Log("Victory detected for player " + winner);

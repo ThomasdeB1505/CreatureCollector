@@ -25,6 +25,11 @@ public class ButtonDescriptionHover : MonoBehaviour, IPointerEnterHandler, IPoin
         buttonRect = transform as RectTransform;
     }
 
+    public void SetDescription(string newDescription)
+    {
+        description = newDescription;
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (descriptionText == null) return;

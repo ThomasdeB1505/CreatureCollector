@@ -23,5 +23,7 @@ public class Selfdestruct : CreatureMove
                 t.currentCreatureOnTile.TakeDamage(damage);
         }
         user.Die();
+
+        BlackBoard.gameManager.CheckVictory();
     }
 }

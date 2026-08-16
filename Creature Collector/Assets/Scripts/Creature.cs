@@ -46,6 +46,10 @@ public class Creature : Unit
     [Header("Enemy Essence Drop")]
     public EssenceType essenceDropType;
 
+    [Header("Legacy Team-Color Shader")]
+    [Tooltip("Off by default now that creatures use sprites. Turn back on to re-enable the red/blue material swap in Initialize().")]
+    public bool useTeamColorShader = false;
+
     // ── Defensive Stance state ──────────────────────────────────────────
     public bool inDefensiveStance = false;
     [Tooltip("Damage multiplier while in stance - not specified in your spec, tune freely")]
@@ -63,14 +67,17 @@ public class Creature : Unit
         healthUI = GetComponent<CreatureHealthUI>();
         if (healthUI != null)
             healthUI.Initialize(this, health);
-        Renderer r = visualAlive.GetComponent<Renderer>()
-                  ?? visualAlive.GetComponentInChildren<Renderer>();
-        if (BlackBoard.gameManager.playerMaterials != null
-            && BlackBoard.gameManager.playerMaterials.Length > assignedPlayer)
+        if (useTeamColorShader)
         {
-            Material mat = BlackBoard.gameManager.playerMaterials[assignedPlayer];
-            foreach (Renderer rend in visualAlive.GetComponentsInChildren<Renderer>())
-                rend.material = mat;
+            Renderer r = visualAlive.GetComponent<Renderer>()
+                      ?? visualAlive.GetComponentInChildren<Renderer>();
+            if (BlackBoard.gameManager.playerMaterials != null
+                && BlackBoard.gameManager.playerMaterials.Length > assignedPlayer)
+            {
+                Material mat = BlackBoard.gameManager.playerMaterials[assignedPlayer];
+                foreach (Renderer rend in visualAlive.GetComponentsInChildren<Renderer>())
+                    rend.material = mat;
+            }
         }
         Debug.Log("Spawned: " + gameObject.name + " at " + _startingTile.gridPosition);
         transform.rotation = Quaternion.Euler(0, assignedPlayer == 0 ? 90 : -90, 0);
@@ -80,6 +87,7 @@ public class Creature : Unit
     {
         base.Moveto(position, _tile);
         _tile.currentCreatureOnTile = this;
+        _tile.OnCreatureEntered(this);
     }
 
     public virtual void Attack(Creature _target)
@@ -110,6 +118,7 @@ public class Creature : Unit
             healthUI.UpdateHearts(health);
     }
 
+    // In Creature.Die()
     public virtual void Die()
     {
         dead = true;
@@ -117,8 +126,10 @@ public class Creature : Unit
         visualDead.SetActive(true);
         if (assignedPlayer == 0)
             BlackBoard.gameManager.OnPlayerCreatureDied();
-        BlackBoard.gameManager.CheckVictory();
-        if (assignedPlayer == 1) // enemy
+
+        BlackBoard.gameManager.RequestVictoryCheck();   // was: CheckVictory()
+
+        if (assignedPlayer == 1)
             LevelManager.Instance.OnEnemyCreatureDied(this);
     }
 

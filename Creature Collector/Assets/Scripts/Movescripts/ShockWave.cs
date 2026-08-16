@@ -7,6 +7,17 @@ public class ShockwaveMove : CreatureMove
     public int damage = 15;
     public int radius = 1;
 
+    public override List<Tile> GetAffectedTiles(Tile centerTile)
+    {
+        List<Tile> result = new List<Tile>();
+        if (centerTile == null) return result;
+        List<Tile> surrounding = BlackBoard.gridManager.GetTilesInRange(centerTile, 0, radius);
+        foreach (Tile t in surrounding)
+            result.Add(t);
+        if (!result.Contains(centerTile))
+            result.Add(centerTile);
+        return result;
+    }
     void Reset()
     {
         moveName = "Shockwave";
@@ -15,29 +26,21 @@ public class ShockwaveMove : CreatureMove
 
     public override List<Tile> GetValidTargetTiles(Creature user)
     {
-        List<Tile> result = new List<Tile>();
-        List<Tile> inRange = BlackBoard.gridManager.GetTilesInRange(user.currentTile, user.attackMinRange, user.attackRange);
-        foreach (Tile t in inRange)
-        {
-            if (t.currentCreatureOnTile != null && !t.currentCreatureOnTile.dead)
-                result.Add(t);
-        }
-        return result;
+        return BlackBoard.gridManager.GetTilesInRange(user.currentTile, user.attackMinRange, user.attackRange);
     }
 
     public override void Execute(Creature user, Tile targetTile, Creature targetCreature)
     {
-        if (targetTile == null) return;
+        Tile centerTile = targetTile != null ? targetTile : user.currentTile;
+        if (centerTile == null) return;
 
-        // Hit the target itself
-        if (targetTile.currentCreatureOnTile != null && !targetTile.currentCreatureOnTile.dead)
-            targetTile.currentCreatureOnTile.TakeDamage(damage);
+        if (centerTile.currentCreatureOnTile != null && !centerTile.currentCreatureOnTile.dead)
+            centerTile.currentCreatureOnTile.TakeDamage(damage);
 
-        // Then the ring around it
-        List<Tile> surrounding = BlackBoard.gridManager.GetTilesInRange(targetTile, 0, radius);
+        List<Tile> surrounding = BlackBoard.gridManager.GetTilesInRange(centerTile, 0, radius);
         foreach (Tile t in surrounding)
         {
-            if (t == targetTile) continue;
+            if (t == centerTile) continue;
             if (t.currentCreatureOnTile != null && !t.currentCreatureOnTile.dead)
                 t.currentCreatureOnTile.TakeDamage(damage);
             if (t.currentObstacle != null)

@@ -69,8 +69,30 @@ public class ActionUI : MonoBehaviour
         HideDescription();
         specialButton.interactable = creature.moves != null && creature.moves.Count > 0;
         evolveButton.interactable = !creature.isEvolvedThisCombat
-    && BlackBoard.gameManager.EvolutionUnlocked
-    && (creature.formEvolutionPrefab != null || creature.essenceEvolutionPrefab != null);
+            && BlackBoard.gameManager.EvolutionUnlocked
+            && (creature.formEvolutionPrefab != null || creature.essenceEvolutionPrefab != null);
+
+        GetOrAddHover(moveButton.gameObject).SetDescription(creature.moveMinRange > 1
+            ? $"Move this creature between {creature.moveMinRange}-{creature.moveRange} tiles."
+            : $"Move this creature up to {creature.moveRange} tiles.");
+
+        GetOrAddHover(attackButton.gameObject).SetDescription(creature.attackMinRange > 1
+ ? $"Attack an enemy creature between {creature.attackMinRange}-{creature.attackRange} tiles away, dealing {creature.attackDamage} damage."
+        : $"Attack an enemy creature within {creature.attackRange} tiles, dealing {creature.attackDamage} damage.");
+    }
+    ButtonDescriptionHover GetOrAddHover(GameObject buttonObj)
+    {
+        ButtonDescriptionHover hover = buttonObj.GetComponent<ButtonDescriptionHover>();
+        if (hover == null)
+        {
+            // Awake() hasn't wired this button up yet — do it now so Show() never breaks.
+            hover = buttonObj.AddComponent<ButtonDescriptionHover>();
+            hover.descriptionText = descriptionText;
+            hover.positionTarget = descriptionPanel != null ? descriptionPanel : descriptionText.rectTransform;
+            hover.toggleTarget = descriptionPanel != null ? descriptionPanel.gameObject : descriptionText.gameObject;
+            hover.verticalPadding = descriptionPadding;
+        }
+        return hover;
     }
     public void Hide()
     {

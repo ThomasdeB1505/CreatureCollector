@@ -17,4 +17,11 @@ public abstract class CreatureMove : ScriptableObject
 
     // Per-move animation hook, no-op by default
     public virtual IEnumerator PlayAnimation(Creature user, Tile targetTile, Creature targetCreature) { yield break; }
+    public virtual List<Tile> GetAffectedTiles(Tile centerTile)
+    {
+        // Default: single-target moves only affect the one tile
+        List<Tile> result = new List<Tile>();
+        if (centerTile != null) result.Add(centerTile);
+        return result;
+    }
 }

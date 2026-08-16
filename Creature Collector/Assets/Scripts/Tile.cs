@@ -10,21 +10,55 @@ public class Tile : MonoBehaviour
     public Color highlightColor = Color.yellow;
     public Color selectedColor = Color.blue;
     public Color AttackRangeColor = Color.red;
+
     public Material HighlighMaterial;
     public Material SelectedMaterial;
     public Material AttackRangeMaterial;
     public Material originalMaterial;
     public Material CombinedRangeMaterial;
+
     private Renderer tileRenderer;
+
     public static Tile selectedTile;
     public static Tile hoveredTile;
+
     public bool inMoveRange = false;
     public Creature currentCreatureOnTile;
 
     // Generic blocking flag - used by Defensive Stance's second occupied tile
     public bool blocked = false;
+
     // Obstacle occupying this tile, if any
     public Obstacle currentObstacle;
+
+    [Header("Poison")]
+    public Material poisonMaterial;
+    public bool poisoned = false;
+
+    // Call this to poison the tile. If a creature is already standing here,
+    // it takes the poison tick immediately. The poison material becomes the
+    // tile's new "resting" material, so all the existing hover/select/reset
+    // logic (which reverts to originalMaterial) keeps the tile poison-colored.
+    public void ApplyPoison(int poisonDamage = 1)
+    {
+        if (poisoned) return; // already poisoned, don't re-tick or re-color
+        poisoned = true;
+        originalMaterial = poisonMaterial;
+
+        // Only repaint immediately if nothing else currently owns this tile's material
+        if (this != selectedTile && this != hoveredTile)
+            SetMaterial(poisonMaterial);
+
+        if (currentCreatureOnTile != null && !currentCreatureOnTile.dead)
+            currentCreatureOnTile.TakeDamage(poisonDamage);
+    }
+
+    // Call this whenever a creature enters this tile (movement).
+    public void OnCreatureEntered(Creature c)
+    {
+        if (poisoned && c != null && !c.dead)
+            c.TakeDamage(1);
+    }
 
     private void Start()
     {
@@ -39,13 +73,15 @@ public class Tile : MonoBehaviour
 
     void OnMouseEnter()
     {
+        // Don't hover-highlight or trigger range previews while a tutorial step is showing
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive) return;
+
         hoveredTile = this;
         BlackBoard.gameManager.RefreshHighlights();
         if (PlacementManager.Instance.IsPlacing)
             PlacementManager.Instance.HighlightPlacementZone();
         if (selectedTile != this)
             SetMaterial(HighlighMaterial);
-
         if (currentCreatureOnTile != null)
         {
             currentCreatureOnTile.GetComponent<CreatureUI>().ShowStats();
@@ -59,6 +95,9 @@ public class Tile : MonoBehaviour
 
     void OnMouseExit()
     {
+        // Don't reset/refresh highlights based on tile state while a tutorial step is showing
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive) return;
+
         BlackBoard.gameManager.RefreshHighlights();
         if (selectedTile != this)
             tileRenderer.material = originalMaterial;
@@ -74,6 +113,9 @@ public class Tile : MonoBehaviour
 
     void OnMouseDown()
     {
+        // Don't allow tile clicks (movement/attack/selection) while a tutorial step is showing
+        if (TutorialManager.Instance != null && TutorialManager.Instance.IsTutorialActive) return;
+
         BlackBoard.gameManager.ClickOnTile(this);
     }
 }

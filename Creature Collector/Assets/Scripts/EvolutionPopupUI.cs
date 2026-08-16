@@ -5,15 +5,14 @@ using TMPro;
 public class EvolutionPopupUI : MonoBehaviour
 {
     public GameObject panel;
-
     public Image optionAImage;
+    public TMP_Text optionAName;
     public TMP_Text optionADescription;
     public Button optionAButton;
-
     public Image optionBImage;
+    public TMP_Text optionBName;
     public TMP_Text optionBDescription;
     public Button optionBButton;
-
     public Button cancelButton;
 
     private GameObject prefabA;
@@ -37,6 +36,7 @@ public class EvolutionPopupUI : MonoBehaviour
         {
             optionAImage.sprite = creature.formEvolutionSprite;
             optionADescription.text = creature.formEvolutionDescription;
+            optionAName.text = prefabA.name;
         }
 
         optionBButton.gameObject.SetActive(prefabB != null);
@@ -44,6 +44,7 @@ public class EvolutionPopupUI : MonoBehaviour
         {
             optionBImage.sprite = creature.essenceEvolutionSprite;
             optionBDescription.text = creature.essenceEvolutionDescription;
+            optionBName.text = prefabB.name;
         }
 
         panel.SetActive(true);

@@ -7,7 +7,7 @@ public class DefensiveStanceMove : CreatureMove
     void Reset()
     {
         moveName = "Defensive Stance";
-        description = "Brace defensively until your next turn, taking reduced damage and occupying an extra adjacent tile.";
+        description = "Brace defensively until your next turn, taking halfed damage and occupying an extra adjacent tile.";
     }
 
     public override List<Tile> GetValidTargetTiles(Creature user)

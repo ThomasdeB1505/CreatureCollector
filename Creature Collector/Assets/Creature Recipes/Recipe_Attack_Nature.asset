@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   form: 0
   essence: 1
-  resultPrefab: {fileID: 515647913151561499, guid: eddffb28d76fbdb45948e0daabeac242, type: 3}
+  resultPrefab: {fileID: 515647913151561499, guid: e07c2b154f1f0b946bfbfb99b2db2019, type: 3}
